@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Card Games</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Card Games Platform - play card games online with friends. Mobile-first PWA."
+    />
+    <meta name="theme-color" content="#4b2a12" />
+
+    <!-- PWA manifest and icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+
+      <!-- ========== LANDING PAGE ========== -->
+      <section id="landing-page" class="screen" aria-label="Landing page">
+        <header class="landing-header">
+          <p class="platform-title">🃏 Card Games</p>
+          <p class="platform-subtitle">Pick a game to play</p>
+        </header>
+        <div id="game-cards-grid" class="game-cards-grid" aria-label="Available games">
+          <!-- Populated dynamically by platform-ui.js -->
+        </div>
+      </section>
+
+      <!-- ========== PPP ONLINE CHOICE SCREEN ========== -->
+      <section id="ppp-online-choice" class="screen" hidden aria-label="Online game options">
+        <h2 class="setup-heading">Patte Par Patta</h2>
+        <button id="btn-create-room" class="btn primary" type="button" aria-label="Create a new game room">
+          🏠 Create Room
+        </button>
+        <button id="btn-join-room" class="btn secondary" type="button" aria-label="Join an existing game room">
+          🚪 Join Room
+        </button>
+        <button id="btn-back-online" class="btn secondary back-btn" type="button" aria-label="Go back to landing page">
+          ← Back
+        </button>
+      </section>
+
+      <!-- ========== PPP CREATE ROOM SCREEN ========== -->
+      <section id="ppp-create-room" class="screen" hidden aria-label="Create a room">
+        <h2 class="setup-heading">Create Room</h2>
+        <div class="setup-group">
+          <input
+            id="create-name-input"
+            type="text"
+            maxlength="12"
+            placeholder="Your Name"
+            autocomplete="off"
+            class="text-input"
+            aria-label="Enter your display name"
+          />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲" aria-label="Select avatar Person With Skullcap">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼" aria-label="Select avatar Office Worker">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼" aria-label="Select avatar Woman Office Worker">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷" aria-label="Select avatar Ninja">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙" aria-label="Select avatar Mage">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️" aria-label="Select avatar Woman Elf">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="btn-create-submit" class="btn primary" type="button" aria-label="Create the room">
+          Create
+        </button>
+        <button id="btn-back-create" class="btn secondary back-btn" type="button" aria-label="Go back">
+          ← Back
+        </button>
+      </section>
+
+      <!-- ========== PPP JOIN ROOM SCREEN ========== -->
+      <section id="ppp-join-room" class="screen" hidden aria-label="Join a room">
+        <h2 class="setup-heading">Join Room</h2>
+        <div class="setup-group">
+          <input
+            id="room-code-input"
+            type="text"
+            maxlength="4"
+            placeholder="Room Code"
+            autocomplete="off"
+            class="text-input"
+            style="text-transform: uppercase;"
+            aria-label="Enter 4-character room code"
+          />
+        </div>
+        <div class="setup-group">
+          <input
+            id="join-name-input"
+            type="text"
+            maxlength="12"
+            placeholder="Your Name"
+            autocomplete="off"
+            class="text-input"
+            aria-label="Enter your display name"
+          />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲" aria-label="Select avatar Person With Skullcap">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼" aria-label="Select avatar Office Worker">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼" aria-label="Select avatar Woman Office Worker">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷" aria-label="Select avatar Ninja">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙" aria-label="Select avatar Mage">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️" aria-label="Select avatar Woman Elf">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="btn-join-submit" class="btn primary" type="button" aria-label="Join the room">
+          Join
+        </button>
+        <button id="btn-back-join" class="btn secondary back-btn" type="button" aria-label="Go back">
+          ← Back
+        </button>
+      </section>
+
+      <!-- ========== PPP LOBBY SCREEN ========== -->
+      <section id="ppp-lobby" class="screen" hidden aria-label="Game lobby">
+        <header class="lobby-header">
+          <h2 class="lobby-title">Game Lobby</h2>
+          <p class="room-code-display" aria-label="Room code">
+            Room: <span id="lobby-room-code">----</span>
+          </p>
+        </header>
+
+        <ul id="lobby-player-list" class="player-list" aria-label="Players in lobby">
+          <!-- Populated dynamically -->
+        </ul>
+
+        <div class="lobby-actions">
+          <button id="btn-share-code" class="btn secondary" type="button" aria-label="Share room code">
+            📋 Share Code
+          </button>
+          <button id="btn-start-online" class="btn primary" type="button" hidden aria-label="Start the game (host only)">
+            Start Game
+          </button>
+          <button id="btn-leave-lobby" class="btn secondary back-btn" type="button" aria-label="Leave the room">
+            ← Leave
+          </button>
+          <p id="lobby-waiting" class="lobby-waiting">Waiting for host to start…</p>
+        </div>
+      </section>
+
+      <!-- ========== PPP GAMEPLAY SCREEN ========== -->
+      <section id="ppp-gameplay" class="screen" hidden aria-label="Game board">
+        <!-- Top players row (opponents) -->
+        <div id="top-players" class="players-row" aria-label="Top players">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Pile area (center) -->
+        <div id="pile-area" class="pile-area" aria-label="Card pile">
+          <div id="pile-card" class="pile-card" aria-label="Top card on pile">
+            <!-- Card face rendered here -->
+          </div>
+          <p id="pile-count" class="pile-count" aria-label="Pile card count">Pile: 0</p>
+        </div>
+
+        <!-- Event message bar -->
+        <div id="event-bar" class="event-bar" aria-live="polite" aria-label="Game events">
+          <!-- e.g. "🧑‍💼 Edge captured the pile!" -->
+        </div>
+
+        <!-- Bottom players row (current player + remaining) -->
+        <div id="bottom-players" class="players-row" aria-label="Bottom players">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Controls bar -->
+        <div class="game-controls" aria-label="Game controls">
+          <label class="mute-toggle" for="mute-toggle">
+            <input id="mute-toggle" type="checkbox" aria-label="Toggle sound mute" />
+            🔇 Mute
+          </label>
+          <button id="btn-end-game" class="btn-end-game" type="button" hidden aria-label="End the current game" title="End Game">
+            ✕
+          </button>
+        </div>
+      </section>
+
+      <!-- ========== PPP RESULTS SCREEN ========== -->
+      <section id="ppp-results" class="screen" hidden aria-label="Game results">
+        <header class="results-header">
+          <h2 class="results-title">🏆 Game Over!</h2>
+        </header>
+
+        <div id="winner-display" class="winner-display" aria-label="Winner">
+          <!-- Winner name, emoji, bounty count -->
+        </div>
+
+        <ul id="results-bounty-list" class="results-bounty-list" aria-label="All players results">
+          <!-- All players: emoji + name + card count -->
+        </ul>
+
+        <!-- Player ready indicators (online mode) -->
+        <div id="ready-indicators" class="ready-indicators" hidden aria-label="Players ready to play again">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="results-actions">
+          <button id="btn-play-again" class="btn primary" type="button" aria-label="Play another round">
+            Play Again
+          </button>
+          <button id="btn-home" class="btn secondary" type="button" aria-label="Return to landing page">
+            Home
+          </button>
+        </div>
+      </section>
+
+    </div><!-- /.app -->
+
+    <!-- Custom modal overlay (replaces browser prompt/confirm) -->
+    <div id="custom-modal" class="modal-overlay" hidden>
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <h3 id="modal-title">Title</h3>
+        <input id="modal-input" type="text" maxlength="20" placeholder="" autocomplete="off" aria-label="Modal input" />
+        <button id="modal-ok" class="btn primary" type="button">OK</button>
+        <button id="modal-cancel" class="btn secondary" type="button" style="margin-top: 8px;">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Update toast -->
+    <div id="update-toast" class="update-toast" hidden>
+      <span>A new version is available.</span>
+      <button id="update-refresh-btn" type="button">Update</button>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Confetti library (async load, fallback CDN) -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"
+      async
+      onerror="
+        var s=document.createElement('script');
+        s.src='https://unpkg.com/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+        s.async=true;
+        document.head.appendChild(s);
+      "
+    ></script>
+
+    <!-- Platform entry point -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
