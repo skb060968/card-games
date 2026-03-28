@@ -13,6 +13,8 @@ const STATIC_ASSETS = [
   "/index.html",
   "/manifest.json",
   "/images/card-back.png",
+  "/images/coming-soon.png",
+  "/images/ppp-card.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];
