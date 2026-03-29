@@ -137,8 +137,16 @@ export function advanceTurn(state) {
 }
 
 /**
- * Checks if only one active player remains.
- * @param {object} state - GameState
+ * Checks if the game should end.
+ *
+ * Rules:
+ * - If 0 active players remain → draw (all eliminated)
+ * - If 1 active player remains:
+ *   - If they were the current player (just threw) → they win if hand > 0, draw if hand ≤ 1
+ *   - If they were NOT the current player → don't end yet, let them play their turn
+ * - If 2+ active players remain → game continues
+ *
+ * @param {object} state - GameState (after a throw, before advanceTurn)
  * @returns {{ finished: boolean, winnerIndex: number|null, draw: boolean }}
  */
 export function checkWinCondition(state) {
@@ -146,12 +154,25 @@ export function checkWinCondition(state) {
     .map((p, i) => ({ ...p, index: i }))
     .filter((p) => !p.eliminated);
 
+  if (activePlayers.length === 0) {
+    return { finished: true, winnerIndex: null, draw: true };
+  }
+
   if (activePlayers.length === 1) {
-    // If the last player has only 0 or 1 card, it's a draw
-    if (activePlayers[0].hand.length <= 1) {
-      return { finished: true, winnerIndex: null, draw: true };
+    const lastPlayer = activePlayers[0];
+
+    // The current player just threw. If THEY are the last one standing,
+    // they win (they have cards from a capture) or it's a draw (≤1 card).
+    if (lastPlayer.index === state.currentPlayerIndex) {
+      if (lastPlayer.hand.length <= 1) {
+        return { finished: true, winnerIndex: null, draw: true };
+      }
+      return { finished: true, winnerIndex: lastPlayer.index, draw: false };
     }
-    return { finished: true, winnerIndex: activePlayers[0].index, draw: false };
+
+    // Someone else just got eliminated, but the last player hasn't played yet.
+    // Don't end — let them take their turn first.
+    return { finished: false, winnerIndex: null, draw: false };
   }
 
   return { finished: false, winnerIndex: null, draw: false };

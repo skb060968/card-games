@@ -23,15 +23,18 @@ export function renderHeap(container, cardCount, faceDown = true) {
   container.innerHTML = '';
   container.style.position = 'relative';
 
-  for (let i = 0; i < cardCount; i++) {
+  // Limit rendered cards for performance, but show enough for heap depth
+  const renderCount = Math.min(cardCount, 6);
+
+  for (let i = 0; i < renderCount; i++) {
     const cardEl = faceDown ? renderCardBack() : renderCardFace({ rank: '', suit: '' });
     cardEl.style.position = 'absolute';
     cardEl.style.top = '0';
     cardEl.style.left = '0';
 
-    const offsetX = (Math.random() - 0.5) * 8;  // -4 to +4
-    const offsetY = (Math.random() - 0.5) * 8;  // -4 to +4
-    const rotation = (Math.random() - 0.5) * 10; // -5 to +5 degrees
+    const offsetX = (Math.random() - 0.5) * 10;  // -5 to +5
+    const offsetY = (Math.random() - 0.5) * 10;  // -5 to +5
+    const rotation = (Math.random() - 0.5) * 14; // -7 to +7 degrees
 
     cardEl.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px) rotate(${rotation.toFixed(1)}deg)`;
     cardEl.style.zIndex = String(i);
@@ -63,9 +66,9 @@ export function renderPileHeap(container, cards) {
     cardEl.style.left = '0';
     cardEl.style.cursor = 'default';
 
-    const offsetX = (Math.random() - 0.5) * 8;
-    const offsetY = (Math.random() - 0.5) * 8;
-    const rotation = (Math.random() - 0.5) * 10;
+    const offsetX = (Math.random() - 0.5) * 10;
+    const offsetY = (Math.random() - 0.5) * 10;
+    const rotation = (Math.random() - 0.5) * 14;
 
     cardEl.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px) rotate(${rotation.toFixed(1)}deg)`;
     cardEl.style.zIndex = String(i);

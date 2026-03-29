@@ -50,6 +50,7 @@ import {
 } from './shared/firebase-sync.js';
 import { db } from './shared/firebase-config.js';
 import { ref, get, update, remove, onValue, off } from 'firebase/database';
+import { initSimpleRummy, checkSRSession } from './games/simple-rummy/main-sr.js';
 
 /* ======= CONSTANTS ======= */
 
@@ -58,7 +59,7 @@ const SESSION_KEY = 'card_games_session';
 
 const GAME_CONFIGS = [
   { id: 'patte-par-patta', name: 'Patte Par Patta', image: '/images/ppp-card.png', available: true },
-  { id: 'game-2', name: 'Game 2', image: '/images/coming-soon.png', available: false },
+  { id: 'simple-rummy', name: 'Simple Rummy', image: '/images/rummy-card.png', available: true },
   { id: 'game-3', name: 'Game 3', image: '/images/coming-soon.png', available: false },
   { id: 'game-4', name: 'Game 4', image: '/images/coming-soon.png', available: false },
   { id: 'game-5', name: 'Game 5', image: '/images/coming-soon.png', available: false },
@@ -176,6 +177,8 @@ function deserializeGameState(gameData, playersData) {
 function handleGameSelect(gameId) {
   if (gameId === 'patte-par-patta') {
     showScreen('ppp-online-choice');
+  } else if (gameId === 'simple-rummy') {
+    showScreen('sr-online-choice');
   } else {
     showToast('Coming Soon!');
   }
@@ -332,15 +335,7 @@ function setupLobby() {
       if (status === 'ended') {
         if (state) {
           state.status = 'finished';
-          let bestIdx = 0;
-          let bestCards = -1;
-          state.players.forEach((p, i) => {
-            if (p.hand.length > bestCards) {
-              bestCards = p.hand.length;
-              bestIdx = i;
-            }
-          });
-          state.winnerIndex = bestIdx;
+          state.winnerIndex = null;
           renderResults(state);
           showScreen('ppp-results');
           startReadyListener();
@@ -348,8 +343,8 @@ function setupLobby() {
       }
     },
 
-    onGameUpdate: (gameData) => {
-      handleRemoteGameUpdate(gameData);
+    onGameUpdate: (gameData, lastMove) => {
+      handleRemoteGameUpdate(gameData, lastMove);
     },
 
     onRoomDeleted: () => {
@@ -559,7 +554,7 @@ async function handleCardTap(handIndex) {
 }
 
 /** Handles remote game updates from Firebase. */
-function handleRemoteGameUpdate(gameData) {
+function handleRemoteGameUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
   if (isProcessingTurn) return;
 
@@ -581,29 +576,44 @@ function handleRemoteGameUpdate(gameData) {
       const newPrevPlayer = newState.players[prevPlayerIdx];
       const wasCaptured = state.pile.length > 0 && newState.pile.length === 0;
 
+      // Save old pile BEFORE updating state
+      const oldPile = [...state.pile];
+
+      // Figure out the thrown card from lastMove or derive it
+      let thrownCard = null;
+      if (lastMove && lastMove.card) {
+        thrownCard = deserializeCard(lastMove.card);
+      }
+
       state = newState;
-      renderGameplay(state, playerIndex);
+
+      // Render with old pile during animation (prevents duplicate card)
+      const tempState = { ...state, pile: oldPile };
+      renderGameplay(tempState, playerIndex);
 
       isProcessingTurn = true;
 
       const opponentDeck = document.querySelector(`.player-slot[data-player-index="${prevPlayerIdx}"] .player-slot-deck .card`);
       const pileArea = document.getElementById('pile-area');
 
-      let thrownCardForAnim = null;
-      if (!wasCaptured && state.pile.length > 0) {
-        thrownCardForAnim = state.pile[state.pile.length - 1];
-      }
-
       const runAnimation = async () => {
+        // Step 1: Throw animation (card slides from deck to pile, flips)
         playSound('throw');
-        if (opponentDeck && pileArea && thrownCardForAnim) {
+        if (opponentDeck && pileArea && thrownCard) {
           const deckRect = opponentDeck.getBoundingClientRect();
           const pileRect = pileArea.getBoundingClientRect();
-          const faceEl = renderCardFace(thrownCardForAnim);
+          const faceEl = renderCardFace(thrownCard);
           await animateThrowToPile(deckRect, pileRect, faceEl);
         }
 
         if (wasCaptured) {
+          // After throw lands, briefly show the pile with the thrown card on top
+          // so the capture shake/sweep has something visible
+          const pileWithThrown = [...oldPile, thrownCard].filter(Boolean);
+          const captureState = { ...state, pile: pileWithThrown };
+          renderGameplay(captureState, playerIndex);
+
+          // Step 2: Capture shake + glow
           playSound('capture');
 
           const pileCard = document.getElementById('pile-card');
@@ -616,6 +626,7 @@ function handleRemoteGameUpdate(gameData) {
           announceCapture(prevPlayer.name);
           setEventMessage(`${prevPlayer.emoji} ${prevPlayer.name} captured the pile!`);
 
+          // Step 3: Sweep pile towards opponent's deck
           const pileEl = document.getElementById('pile-card');
           const deckAfter = document.querySelector(`.player-slot[data-player-index="${prevPlayerIdx}"] .player-slot-deck .card`);
           if (pileEl && deckAfter) {
@@ -628,6 +639,7 @@ function handleRemoteGameUpdate(gameData) {
           setEventMessage(`${prevPlayer.emoji} ${prevPlayer.name} is out of cards!`);
         }
 
+        // Final render with real state (empty pile after capture, or new pile after throw)
         renderGameplay(state, playerIndex);
         isProcessingTurn = false;
       };
@@ -727,6 +739,7 @@ function wireResults() {
         // Second click: reset room to lobby
         if (window._readyCleanup) window._readyCleanup();
         btnPlayAgain.dataset.hostReady = '';
+        btnPlayAgain.dataset.playerReady = '';
         btnPlayAgain.textContent = 'Play Again';
         state = null;
         if (roomCode) {
@@ -748,6 +761,7 @@ function wireResults() {
           });
         } catch (_) {}
       }
+      btnPlayAgain.dataset.playerReady = 'true';
       btnPlayAgain.disabled = true;
       btnPlayAgain.textContent = '✓ Ready';
       showToast('Waiting for host to start new round...');
@@ -784,9 +798,14 @@ function wireResults() {
 function startReadyListener() {
   if (!roomCode) return;
 
-  btnPlayAgain.disabled = false;
-  btnPlayAgain.textContent = 'Play Again';
-  btnPlayAgain.dataset.hostReady = '';
+  // Only reset button if player hasn't already clicked ready
+  if (!btnPlayAgain.dataset.hostReady && !btnPlayAgain.dataset.playerReady) {
+    btnPlayAgain.disabled = false;
+    btnPlayAgain.textContent = 'Play Again';
+  }
+
+  // Clean up previous listener if any
+  if (window._readyCleanup) window._readyCleanup();
 
   const readyRef = ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/ready`);
 
@@ -916,22 +935,14 @@ async function checkSession() {
           }
           if (newStatus === 'ended' && state) {
             state.status = 'finished';
-            let bestIdx = 0;
-            let bestCards = -1;
-            state.players.forEach((p, i) => {
-              if (p.hand.length > bestCards) {
-                bestCards = p.hand.length;
-                bestIdx = i;
-              }
-            });
-            state.winnerIndex = bestIdx;
+            state.winnerIndex = null;
             renderResults(state);
             showScreen('ppp-results');
             startReadyListener();
           }
         },
-        onGameUpdate: (gameData) => {
-          handleRemoteGameUpdate(gameData);
+        onGameUpdate: (gameData, lastMove) => {
+          handleRemoteGameUpdate(gameData, lastMove);
         },
         onRoomDeleted: () => {
           showToast('Host has left. Room closed.', 3000);
@@ -1019,12 +1030,17 @@ async function init() {
   wireEmojiPicker('#ppp-create-room .emoji-picker');
   wireEmojiPicker('#ppp-join-room .emoji-picker');
 
+  initSimpleRummy(showLandingPage, GAME_CONFIGS);
+
   registerServiceWorker();
 
   const rejoined = await checkSession();
 
   if (!rejoined) {
-    showLandingPage();
+    const srRejoined = await checkSRSession();
+    if (!srRejoined) {
+      showLandingPage();
+    }
   }
 }
 

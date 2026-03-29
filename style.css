@@ -325,7 +325,7 @@ body {
   height: 100%;
   background: #fff;
   border-radius: var(--card-radius);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -362,14 +362,44 @@ body {
 .card-face.black { color: var(--color-card-black); }
 
 /* =========================================================
-   8) CARD BACK STYLES
+   8) CARD BACK STYLES (CSS-generated pattern)
    ========================================================= */
 .card-back {
   width: 100%;
   height: 100%;
   border-radius: var(--card-radius);
-  background: url('/images/card-back.png') center / 100% 100% no-repeat;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  border: 3px solid #f5e6c8;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(255,255,255,0.08) 4px,
+      rgba(255,255,255,0.08) 5px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 4px,
+      rgba(255,255,255,0.08) 4px,
+      rgba(255,255,255,0.08) 5px
+    ),
+    radial-gradient(ellipse at center, #8b1a2b 0%, #4a0e1a 100%);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Center diamond accent */
+.card-back::after {
+  content: '♦';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  color: rgba(245,230,200,0.35);
+  pointer-events: none;
 }
 
 /* =========================================================
@@ -386,6 +416,20 @@ body {
   top: 0;
   left: 0;
 }
+
+/* Card backs in heap: drop shadow so offset cards show depth */
+.heap-container .card-back {
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.3), 1px 1px 4px rgba(0,0,0,0.5);
+}
+
+/* Card faces in heap (pile): subtle shadow for depth */
+.heap-container .card-face {
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Heap cards: no pointer cursor, inline transforms take precedence over hover */
+.heap-container .card { cursor: default; }
+.pile-card .card { cursor: default; }
 
 /* =========================================================
    10) ANIMATION KEYFRAMES
@@ -514,9 +558,7 @@ body {
 .pile-card {
   width: var(--card-width);
   height: var(--card-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
 }
 
 .pile-count {
@@ -918,4 +960,182 @@ body {
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border: 0;
+}
+
+/* =========================================================
+   20) SIMPLE RUMMY — GAMEPLAY STYLES
+   ========================================================= */
+
+/* Opponents row */
+.sr-opponents-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  gap: var(--gap-md);
+  padding: 8px 0;
+}
+
+.sr-opponent-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.sr-opponent-slot.active-turn {
+  box-shadow: 0 0 10px rgba(243,156,18,0.7), 0 0 20px rgba(243,156,18,0.3);
+  background: rgba(243,156,18,0.1);
+}
+
+.sr-opponent-emoji { font-size: 1.3rem; }
+
+.sr-opponent-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  max-width: 80px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-opponent-slot.active-turn .sr-opponent-name { color: var(--color-accent); }
+
+.sr-opponent-count {
+  font-size: 0.7rem;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+/* Turn indicator */
+.sr-turn-indicator {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  color: var(--color-accent);
+  min-height: 24px;
+}
+
+/* Piles area */
+.sr-piles-area {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sr-piles-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.sr-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.sr-pile-tappable {
+  cursor: pointer;
+}
+
+.sr-pile-tappable .card,
+.sr-pile-tappable .card-back {
+  box-shadow: 0 0 10px rgba(243,156,18,0.6), 0 0 20px rgba(243,156,18,0.3);
+}
+
+.sr-pile-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.sr-pile-empty {
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 2px dashed rgba(255,255,255,0.2);
+  border-radius: var(--card-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  opacity: 0.3;
+}
+
+/* Fan hand layout */
+.sr-hand-area {
+  width: 100%;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sr-fan {
+  display: flex;
+  justify-content: center;
+  padding: 0 8px;
+  min-width: min-content;
+}
+
+.sr-fan-card {
+  margin-left: -35px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: default;
+}
+
+.sr-fan-card:first-child {
+  margin-left: 0;
+}
+
+/* Discardable cards lift on hover/tap */
+.sr-fan-card.sr-discardable {
+  cursor: pointer;
+}
+
+.sr-fan-card.sr-discardable:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 4px 12px rgba(243,156,18,0.5);
+}
+
+.sr-fan-card.sr-discardable:active {
+  transform: translateY(-6px) scale(0.97);
+}
+
+/* Gameplay layout */
+#sr-gameplay {
+  gap: var(--gap-sm);
+  padding: 4px 8px;
+  min-height: 100svh;
+  justify-content: space-between;
+}
+
+/* Win display groups */
+.sr-win-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.sr-win-group {
+  display: flex;
+  gap: 3px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+
+.sr-win-group .card {
+  cursor: default;
+}
+
+.sr-win-group .card:hover {
+  transform: none;
 }

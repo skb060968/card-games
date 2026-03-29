@@ -175,7 +175,7 @@ export function listenRoom(gameId, roomCode, callbacks) {
       callbacks.onPlayersChange(data.players);
     }
     if (callbacks.onGameUpdate && data.game) {
-      callbacks.onGameUpdate(data.game);
+      callbacks.onGameUpdate(data.game, data.lastMove || null);
     }
     if (callbacks.onStatusChange && data.meta) {
       callbacks.onStatusChange(data.meta.status);
