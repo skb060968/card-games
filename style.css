@@ -966,28 +966,13 @@ body {
   display: none; /* replaced by players bar */
 }
 
-/* Current turn display */
+/* Current turn — opponent hand strip only */
 .sr-current-turn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 0 2px;
-}
-
-.sr-ct-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.sr-ct-emoji { font-size: 1.6rem; }
-
-.sr-ct-name {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--color-accent);
+  gap: 4px;
+  padding: 4px 0;
 }
 
 /* Opponent hand strip — flat horizontal face-down cards */

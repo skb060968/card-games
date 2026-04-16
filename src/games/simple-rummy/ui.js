@@ -25,43 +25,29 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
 
   if (!pileArea || !handArea) return;
 
-  // Players bar — compact chips for all players
+  // Players bar — compact chips for all players, active highlighted
   if (playersBar) {
     renderPlayersBar(playersBar, state.players, state.currentPlayerIndex, localPlayerIndex);
   }
 
-  // Current turn — show active player info + their face-down hand strip (if not local)
+  // Opponent hand strip — show active player's face-down hand when it's not local player's turn
   if (currentTurnEl) {
     currentTurnEl.innerHTML = '';
-    const current = state.players[state.currentPlayerIndex];
     const isMe = state.currentPlayerIndex === localPlayerIndex;
 
-    const header = document.createElement('div');
-    header.className = 'sr-ct-header';
-
-    const emoji = document.createElement('span');
-    emoji.className = 'sr-ct-emoji';
-    emoji.textContent = current.emoji;
-
-    const name = document.createElement('span');
-    name.className = 'sr-ct-name';
-    name.textContent = isMe ? 'Your Turn' : `${current.name}'s Turn`;
-
-    header.appendChild(emoji);
-    header.appendChild(name);
-    currentTurnEl.appendChild(header);
-
-    // Show active player's hand as flat face-down strip (only for opponents)
     if (!isMe) {
-      const strip = document.createElement('div');
-      strip.className = 'sr-opponent-hand-strip';
-      const count = current.hand.length;
-      for (let c = 0; c < count; c++) {
-        const back = renderCardBack();
-        back.classList.add('sr-strip-card');
-        strip.appendChild(back);
+      const current = state.players[state.currentPlayerIndex];
+      const count = current.hand ? current.hand.length : 10;
+      if (count > 0) {
+        const strip = document.createElement('div');
+        strip.className = 'sr-opponent-hand-strip';
+        for (let c = 0; c < count; c++) {
+          const back = renderCardBack();
+          back.classList.add('sr-strip-card');
+          strip.appendChild(back);
+        }
+        currentTurnEl.appendChild(strip);
       }
-      currentTurnEl.appendChild(strip);
     }
   }
 
@@ -69,11 +55,11 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   const isMyDrawPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'draw';
   renderPiles(pileArea, state, isMyDrawPhase, callbacks);
 
-  // Turn indicator
+  // Turn indicator — show action hint only when it's local player's turn
   if (turnIndicator) {
     if (state.currentPlayerIndex === localPlayerIndex) {
       turnIndicator.textContent = state.turnPhase === 'draw'
-        ? '👆 Pick a card from draw or discard pile'
+        ? '👆 Pick a card'
         : '👆 Tap a card to discard';
     } else {
       turnIndicator.textContent = '';
