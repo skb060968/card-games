@@ -20,23 +20,34 @@ export function showScreen(screenId) {
 }
 
 /**
- * Renders the landing page with 5 game cards in #game-cards-grid.
- * Available games get a working Play button; unavailable games get
- * a disabled button + "Coming Soon" badge + .coming-soon class.
+ * Renders the landing page with 6 selectable game cards in a 2×3 grid
+ * and one shared Play button below. Tap a card to select it, then tap Play.
+ * First available game is pre-selected.
  *
  * @param {Array<{id: string, name: string, image: string, available: boolean}>} games
  * @param {Function} onGameSelect - callback(gameId)
  */
 export function renderLandingPage(games, onGameSelect) {
   const grid = document.getElementById('game-cards-grid');
+  const playBtn = document.getElementById('landing-play-btn');
   if (!grid) return;
 
   grid.innerHTML = '';
 
+  let selectedId = null;
+
+  // Pre-select first available game
+  const firstAvailable = games.find((g) => g.available);
+  if (firstAvailable) selectedId = firstAvailable.id;
+
+  const cards = [];
+
   games.forEach((game) => {
     const card = document.createElement('div');
     card.className = 'game-card';
+    card.dataset.gameId = game.id;
     if (!game.available) card.classList.add('coming-soon');
+    if (game.id === selectedId) card.classList.add('selected');
 
     const img = document.createElement('img');
     img.src = game.image;
@@ -46,17 +57,7 @@ export function renderLandingPage(games, onGameSelect) {
     name.className = 'game-card-name';
     name.textContent = game.name;
 
-    const btn = document.createElement('button');
-    btn.className = 'game-card-btn';
-    btn.type = 'button';
-    btn.textContent = 'Play';
-    btn.setAttribute('aria-label', `Play ${game.name}`);
-
-    if (game.available) {
-      btn.addEventListener('click', () => onGameSelect(game.id));
-    } else {
-      btn.disabled = true;
-
+    if (!game.available) {
       const badge = document.createElement('span');
       badge.className = 'coming-soon-badge';
       badge.textContent = 'Coming Soon';
@@ -65,9 +66,41 @@ export function renderLandingPage(games, onGameSelect) {
 
     card.appendChild(img);
     card.appendChild(name);
-    card.appendChild(btn);
+
+    // Tap to select
+    if (game.available) {
+      card.addEventListener('click', () => {
+        selectedId = game.id;
+        cards.forEach((c) => c.classList.remove('selected'));
+        card.classList.add('selected');
+        if (playBtn) {
+          playBtn.disabled = false;
+          playBtn.textContent = `▶ Play ${game.name}`;
+        }
+      });
+    }
+
+    cards.push(card);
     grid.appendChild(card);
   });
+
+  // Setup play button
+  if (playBtn) {
+    playBtn.disabled = !selectedId;
+    if (firstAvailable) {
+      playBtn.textContent = `▶ Play ${firstAvailable.name}`;
+    } else {
+      playBtn.textContent = '▶ Play';
+    }
+
+    // Remove old listeners by cloning
+    const newBtn = playBtn.cloneNode(true);
+    playBtn.parentNode.replaceChild(newBtn, playBtn);
+
+    newBtn.addEventListener('click', () => {
+      if (selectedId) onGameSelect(selectedId);
+    });
+  }
 }
 
 /**

@@ -34,6 +34,9 @@
         <div id="game-cards-grid" class="game-cards-grid" aria-label="Available games">
           <!-- Populated dynamically by platform-ui.js -->
         </div>
+        <button id="landing-play-btn" class="btn primary landing-play-btn" type="button" disabled aria-label="Play selected game">
+          ▶ Play
+        </button>
       </section>
 
       <!-- ========== PPP ONLINE CHOICE SCREEN ========== -->
@@ -292,10 +295,16 @@
       </section>
 
       <!-- SR GAMEPLAY -->
-      <section id="sr-gameplay" class="screen" hidden aria-label="Simple Rummy game board">
-        <div id="sr-opponents" class="sr-opponents-row" aria-label="Opponents"></div>
-        <div id="sr-turn-indicator" class="sr-turn-indicator" aria-live="polite"></div>
+      <section id="sr-gameplay" class="screen" hidden aria-label="Rummy game board">
+        <!-- Current turn player info -->
+        <div id="sr-current-turn" class="sr-current-turn" aria-label="Current turn"></div>
+        <!-- All players status bar -->
+        <div id="sr-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Draw and discard piles -->
         <div id="sr-piles" class="sr-piles-area" aria-label="Draw and discard piles"></div>
+        <!-- Turn phase indicator -->
+        <div id="sr-turn-indicator" class="sr-turn-indicator" aria-live="polite"></div>
+        <!-- Local player's hand -->
         <div id="sr-hand-area" class="sr-hand-area" aria-label="Your hand"></div>
         <div class="game-controls">
           <label class="mute-toggle" for="sr-mute-toggle">

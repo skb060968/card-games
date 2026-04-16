@@ -11,74 +11,221 @@ import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 
 /**
  * Renders the full Simple Rummy gameplay screen.
+ * Layout: players bar (all players) → current turn info → piles → turn indicator → local hand
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
  * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
-  const opponentArea = document.getElementById('sr-opponents');
+  const currentTurnEl = document.getElementById('sr-current-turn');
+  const playersBar = document.getElementById('sr-players-bar');
   const pileArea = document.getElementById('sr-piles');
   const handArea = document.getElementById('sr-hand-area');
   const turnIndicator = document.getElementById('sr-turn-indicator');
 
-  if (!opponentArea || !pileArea || !handArea) return;
+  if (!pileArea || !handArea) return;
 
-  // Opponents
-  const opponents = state.players
-    .map((p, i) => ({ ...p, index: i, cardCount: p.hand.length }))
-    .filter((_, i) => i !== localPlayerIndex);
-  renderOpponentHands(opponentArea, opponents, state.currentPlayerIndex);
+  // Players bar — compact chips for all players
+  if (playersBar) {
+    renderPlayersBar(playersBar, state.players, state.currentPlayerIndex, localPlayerIndex);
+  }
+
+  // Current turn — show active player info + their face-down hand strip (if not local)
+  if (currentTurnEl) {
+    currentTurnEl.innerHTML = '';
+    const current = state.players[state.currentPlayerIndex];
+    const isMe = state.currentPlayerIndex === localPlayerIndex;
+
+    const header = document.createElement('div');
+    header.className = 'sr-ct-header';
+
+    const emoji = document.createElement('span');
+    emoji.className = 'sr-ct-emoji';
+    emoji.textContent = current.emoji;
+
+    const name = document.createElement('span');
+    name.className = 'sr-ct-name';
+    name.textContent = isMe ? 'Your Turn' : `${current.name}'s Turn`;
+
+    header.appendChild(emoji);
+    header.appendChild(name);
+    currentTurnEl.appendChild(header);
+
+    // Show active player's hand as flat face-down strip (only for opponents)
+    if (!isMe) {
+      const strip = document.createElement('div');
+      strip.className = 'sr-opponent-hand-strip';
+      const count = current.hand.length;
+      for (let c = 0; c < count; c++) {
+        const back = renderCardBack();
+        back.classList.add('sr-strip-card');
+        strip.appendChild(back);
+      }
+      currentTurnEl.appendChild(strip);
+    }
+  }
 
   // Piles
   const isMyDrawPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'draw';
   renderPiles(pileArea, state, isMyDrawPhase, callbacks);
 
-  // Local hand
-  const isMyDiscardPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'discard';
-  renderFanHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap);
-
   // Turn indicator
   if (turnIndicator) {
-    const current = state.players[state.currentPlayerIndex];
     if (state.currentPlayerIndex === localPlayerIndex) {
       turnIndicator.textContent = state.turnPhase === 'draw'
-        ? '🎯 Your turn — pick a card'
-        : '🎯 Your turn — discard a card';
+        ? '👆 Pick a card from draw or discard pile'
+        : '👆 Tap a card to discard';
     } else {
-      turnIndicator.textContent = `⏳ ${current.emoji} ${current.name}'s turn`;
+      turnIndicator.textContent = '';
     }
   }
+
+  // Local hand — arc/inverted-U layout
+  const isMyDiscardPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'discard';
+  renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onReorder);
 }
 
-/* ======= FAN HAND ======= */
+/**
+ * Renders a compact players bar showing all players.
+ * Each player shows emoji + name + card count. Active turn gets highlight.
+ */
+function renderPlayersBar(container, players, currentPlayerIndex, localPlayerIndex) {
+  container.innerHTML = '';
+
+  players.forEach((player, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'sr-player-chip';
+    if (i === currentPlayerIndex) slot.classList.add('sr-chip-active');
+    if (i === localPlayerIndex) slot.classList.add('sr-chip-me');
+
+    const emoji = document.createElement('span');
+    emoji.className = 'sr-chip-emoji';
+    emoji.textContent = player.emoji;
+
+    const info = document.createElement('span');
+    info.className = 'sr-chip-info';
+    const displayName = i === localPlayerIndex ? 'You' : player.name;
+    info.textContent = `${displayName} (${player.hand.length})`;
+
+    slot.appendChild(emoji);
+    slot.appendChild(info);
+    container.appendChild(slot);
+  });
+}
+
+/* ======= ARC HAND (Inverted-U) ======= */
+
+// Track selected card index for reordering or discard confirmation
+let _selectedForMove = null;
+let _selectedForDiscard = null;
+// Track the index of the newly drawn card
+let _newlyDrawnIndex = -1;
 
 /**
- * Renders the local player's hand as a horizontal fan layout.
+ * Sets the index of the newly drawn card for highlighting.
+ * @param {number} idx
+ */
+export function setNewlyDrawnIndex(idx) {
+  _newlyDrawnIndex = idx;
+}
+
+/**
+ * Renders the local player's hand in an inverted-U arc layout.
+ *
+ * Modes:
+ * - Discard phase (canDiscard=true): first tap selects card (lifts + gold glow),
+ *   second tap on same card confirms discard, tapping different card switches selection.
+ * - Otherwise: tap to select for reorder, tap another position to move.
+ *
  * @param {HTMLElement} container
  * @param {Array<{rank: string, suit: string}>} hand
  * @param {boolean} canDiscard
- * @param {Function} onCardTap - callback(handIndex)
+ * @param {Function} onCardTap - callback(handIndex) for confirmed discard
+ * @param {Function} [onReorder] - callback(fromIndex, toIndex) for rearranging
  */
-export function renderFanHand(container, hand, canDiscard, onCardTap) {
+export function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
   container.innerHTML = '';
 
-  const fan = document.createElement('div');
-  fan.className = 'sr-fan';
+  const arc = document.createElement('div');
+  arc.className = 'sr-arc';
+
+  const n = hand.length;
+  const maxAngle = 30;
+  const maxLift = 20;
 
   hand.forEach((card, i) => {
     const cardEl = renderCardFace(card);
     cardEl.dataset.handIndex = String(i);
-    cardEl.classList.add('sr-fan-card');
+    cardEl.classList.add('sr-arc-card');
 
-    if (canDiscard) {
-      cardEl.classList.add('sr-discardable');
-      cardEl.addEventListener('click', () => onCardTap(i));
+    const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
+    const angle = t * (maxAngle / 2);
+    const lift = (1 - t * t) * maxLift;
+    let extraLift = 0;
+
+    // Newly drawn card highlight (green glow)
+    if (i === _newlyDrawnIndex) {
+      cardEl.classList.add('sr-card-new');
     }
 
-    fan.appendChild(cardEl);
+    if (canDiscard) {
+      // Discard mode: two-tap confirm
+      cardEl.classList.add('sr-discardable');
+      cardEl.style.cursor = 'pointer';
+
+      if (_selectedForDiscard === i) {
+        cardEl.classList.add('sr-card-discard-selected');
+        extraLift = 18;
+      }
+
+      cardEl.addEventListener('click', () => {
+        if (_selectedForDiscard === i) {
+          // Second tap — confirm discard
+          _selectedForDiscard = null;
+          _newlyDrawnIndex = -1;
+          onCardTap(i);
+        } else {
+          // First tap or switch selection
+          _selectedForDiscard = i;
+          renderArcHand(container, hand, canDiscard, onCardTap, onReorder);
+        }
+      });
+    } else {
+      // Reorder mode
+      cardEl.style.cursor = 'pointer';
+
+      if (_selectedForMove === i) {
+        cardEl.classList.add('sr-card-selected');
+        extraLift = 18;
+      }
+
+      cardEl.addEventListener('click', () => {
+        if (_selectedForMove === null || _selectedForMove === i) {
+          _selectedForMove = _selectedForMove === i ? null : i;
+          renderArcHand(container, hand, canDiscard, onCardTap, onReorder);
+        } else {
+          const from = _selectedForMove;
+          _selectedForMove = null;
+          if (onReorder) onReorder(from, i);
+        }
+      });
+    }
+
+    cardEl.style.transform = `translateY(${-lift - extraLift}px) rotate(${angle}deg)`;
+    cardEl.style.zIndex = _selectedForDiscard === i || _selectedForMove === i ? '20' : String(i);
+
+    arc.appendChild(cardEl);
   });
 
-  container.appendChild(fan);
+  container.appendChild(arc);
+}
+
+/**
+ * Clears all selection states (call on phase/turn change).
+ */
+export function clearSelection() {
+  _selectedForMove = null;
+  _selectedForDiscard = null;
 }
 
 /* ======= PILES ======= */
@@ -145,38 +292,6 @@ function renderPiles(container, state, isMyDrawPhase, callbacks) {
   wrapper.appendChild(drawPileEl);
   wrapper.appendChild(discardPileEl);
   container.appendChild(wrapper);
-}
-
-/* ======= OPPONENT HANDS ======= */
-
-/**
- * Renders opponent hands as card backs with count.
- */
-function renderOpponentHands(container, opponents, currentPlayerIndex) {
-  container.innerHTML = '';
-
-  opponents.forEach((opp) => {
-    const slot = document.createElement('div');
-    slot.className = 'sr-opponent-slot';
-    if (opp.index === currentPlayerIndex) slot.classList.add('active-turn');
-
-    const emoji = document.createElement('span');
-    emoji.className = 'sr-opponent-emoji';
-    emoji.textContent = opp.emoji;
-
-    const name = document.createElement('span');
-    name.className = 'sr-opponent-name';
-    name.textContent = opp.name;
-
-    const count = document.createElement('span');
-    count.className = 'sr-opponent-count';
-    count.textContent = `🃏 ${opp.cardCount}`;
-
-    slot.appendChild(emoji);
-    slot.appendChild(name);
-    slot.appendChild(count);
-    container.appendChild(slot);
-  });
 }
 
 /* ======= WIN DISPLAY ======= */

@@ -113,12 +113,12 @@ body {
 }
 
 /* =========================================================
-   3b) GAME CARDS GRID
+   3b) GAME CARDS GRID — 2×3 selectable cards + shared Play button
    ========================================================= */
 .game-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   max-width: 360px;
   padding: 8px 0;
@@ -130,64 +130,61 @@ body {
   align-items: center;
   background: var(--color-panel-bg);
   border-radius: 14px;
-  padding: 14px 10px;
-  gap: 8px;
+  padding: 12px 8px 10px;
+  gap: 6px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.2s;
 }
 
 .game-card:hover { transform: translateY(-2px); }
+.game-card:active { transform: translateY(0); }
+
+.game-card.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 12px rgba(243,156,18,0.5), 0 0 24px rgba(243,156,18,0.2);
+}
 
 .game-card img {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
   border-radius: 10px;
 }
 
 .game-card .game-card-name {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-align: center;
 }
 
-.game-card .game-card-btn {
-  width: 100%;
-  max-width: 120px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 0.8rem;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(180deg, var(--color-wood-light), var(--color-wood-dark));
-  color: var(--color-text-light);
-  box-shadow: 0 2px 0 var(--color-wood-dark), 0 3px 8px rgba(0,0,0,0.3);
-  transition: transform 0.12s, filter 0.12s;
-}
-
-.game-card .game-card-btn:hover { filter: brightness(1.06); }
-.game-card .game-card-btn:active { transform: translateY(1px); }
-.game-card .game-card-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.4); }
-
 /* Coming Soon overlay */
 .game-card.coming-soon {
-  opacity: 0.55;
+  opacity: 0.45;
   filter: grayscale(0.3);
+  cursor: not-allowed;
 }
 
 .game-card .coming-soon-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 6px;
+  right: 6px;
   background: var(--color-accent);
   color: #1a1a1a;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
   text-transform: uppercase;
+}
+
+/* Shared Play button below grid */
+.landing-play-btn {
+  margin-top: 6px;
+  max-width: 300px;
+  font-size: 1rem;
 }
 
 /* =========================================================
@@ -968,46 +965,102 @@ body {
 
 /* Opponents row */
 .sr-opponents-row {
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  gap: var(--gap-md);
-  padding: 8px 0;
+  display: none; /* replaced by players bar */
 }
 
-.sr-opponent-slot {
+/* Current turn display */
+.sr-current-turn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  transition: box-shadow 0.3s, background 0.3s;
+  gap: 6px;
+  padding: 6px 0 2px;
 }
 
-.sr-opponent-slot.active-turn {
-  box-shadow: 0 0 10px rgba(243,156,18,0.7), 0 0 20px rgba(243,156,18,0.3);
-  background: rgba(243,156,18,0.1);
+.sr-ct-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.sr-opponent-emoji { font-size: 1.3rem; }
+.sr-ct-emoji { font-size: 1.6rem; }
 
-.sr-opponent-name {
-  font-size: 0.75rem;
+.sr-ct-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+/* Opponent hand strip — flat horizontal face-down cards */
+.sr-opponent-hand-strip {
+  display: flex;
+  justify-content: center;
+}
+
+.sr-opponent-hand-strip .card.sr-strip-card {
+  width: 28px;
+  height: 40px;
+  margin-left: -12px;
+}
+
+.sr-opponent-hand-strip .card.sr-strip-card:first-child {
+  margin-left: 0;
+}
+
+.sr-opponent-hand-strip .card-back {
+  width: 100%;
+  height: 100%;
+  border-width: 2px;
+}
+
+.sr-opponent-hand-strip .card-back::after {
+  font-size: 0.6rem;
+}
+
+/* Players bar — compact horizontal chips */
+.sr-players-bar {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+
+.sr-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.7rem;
   font-weight: 700;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.sr-chip-emoji { font-size: 0.9rem; }
+
+.sr-chip-info {
+  white-space: nowrap;
   max-width: 80px;
-  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.sr-opponent-slot.active-turn .sr-opponent-name { color: var(--color-accent); }
+.sr-player-chip.sr-chip-active {
+  background: rgba(243,156,18,0.15);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(243,156,18,0.4);
+}
 
-.sr-opponent-count {
-  font-size: 0.7rem;
-  font-weight: 800;
-  opacity: 0.8;
+.sr-player-chip.sr-chip-active .sr-chip-info {
+  color: var(--color-accent);
+}
+
+.sr-player-chip.sr-chip-me {
+  border-style: dashed;
 }
 
 /* Turn indicator */
@@ -1068,43 +1121,58 @@ body {
   opacity: 0.3;
 }
 
-/* Fan hand layout */
+/* Arc hand layout (inverted-U) */
 .sr-hand-area {
   width: 100%;
-  overflow-x: auto;
-  padding: 8px 0 12px;
-  -webkit-overflow-scrolling: touch;
-}
-
-.sr-fan {
   display: flex;
   justify-content: center;
-  padding: 0 8px;
-  min-width: min-content;
+  padding: 8px 0 16px;
+  overflow: visible;
 }
 
-.sr-fan-card {
-  margin-left: -35px;
+.sr-arc {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  padding: 24px 4px 0;
+}
+
+.sr-arc-card {
+  margin-left: -22px;
   transition: transform 0.15s, box-shadow 0.15s;
   cursor: default;
+  transform-origin: bottom center;
 }
 
-.sr-fan-card:first-child {
+.sr-arc-card:first-child {
   margin-left: 0;
 }
 
-/* Discardable cards lift on hover/tap */
-.sr-fan-card.sr-discardable {
+/* Discardable cards glow on hover */
+.sr-arc-card.sr-discardable {
   cursor: pointer;
 }
 
-.sr-fan-card.sr-discardable:hover {
-  transform: translateY(-10px);
+.sr-arc-card.sr-discardable:hover {
   box-shadow: 0 4px 12px rgba(243,156,18,0.5);
+  filter: brightness(1.05);
 }
 
-.sr-fan-card.sr-discardable:active {
-  transform: translateY(-6px) scale(0.97);
+/* Selected card for reordering — extra lift with blue glow */
+.sr-arc-card.sr-card-selected {
+  box-shadow: 0 4px 14px rgba(52,152,219,0.7);
+  z-index: 20 !important;
+}
+
+/* Selected card for discard confirmation — extra lift with gold glow */
+.sr-arc-card.sr-card-discard-selected {
+  box-shadow: 0 4px 14px rgba(243,156,18,0.8);
+  z-index: 20 !important;
+}
+
+/* Newly drawn card — green pulse glow */
+.sr-arc-card.sr-card-new {
+  box-shadow: 0 0 10px rgba(46,204,113,0.7), 0 0 20px rgba(46,204,113,0.3);
 }
 
 /* Gameplay layout */

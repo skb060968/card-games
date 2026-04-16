@@ -59,10 +59,11 @@ const SESSION_KEY = 'card_games_session';
 
 const GAME_CONFIGS = [
   { id: 'patte-par-patta', name: 'Patte Par Patta', image: '/images/ppp-card.png', available: true },
-  { id: 'simple-rummy', name: 'Simple Rummy', image: '/images/rummy-card.png', available: true },
+  { id: 'simple-rummy', name: 'Rummy', image: '/images/rummy-card.png', available: true },
   { id: 'game-3', name: 'Game 3', image: '/images/coming-soon.png', available: false },
   { id: 'game-4', name: 'Game 4', image: '/images/coming-soon.png', available: false },
   { id: 'game-5', name: 'Game 5', image: '/images/coming-soon.png', available: false },
+  { id: 'game-6', name: 'Game 6', image: '/images/coming-soon.png', available: false },
 ];
 
 /* ======= STATE ======= */

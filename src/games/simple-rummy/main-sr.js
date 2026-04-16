@@ -20,6 +20,8 @@ import {
   renderLobbyPlayers,
   renderReadyIndicators,
   renderWinDisplay,
+  setNewlyDrawnIndex,
+  clearSelection,
 } from './ui.js';
 import {
   announceWin,
@@ -41,7 +43,8 @@ import {
 } from '../../shared/firebase-sync.js';
 import { db } from '../../shared/firebase-config.js';
 import { ref, get, update, remove, onValue, off } from 'firebase/database';
-import { serializeCard } from '../../shared/deck.js';
+import { serializeCard, deserializeCard } from '../../shared/deck.js';
+import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 
 /* ======= CONSTANTS ======= */
 const GAME_ID = 'simple-rummy';
@@ -74,6 +77,86 @@ function cleanupAndGoHome() {
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
   if (goHome) goHome();
+}
+
+/* ======= CARD ANIMATIONS ======= */
+
+let _isAnimating = false;
+
+/**
+ * Animates a floating card from one rect to another.
+ * @param {DOMRect} fromRect
+ * @param {DOMRect} toRect
+ * @param {HTMLElement} cardContent - card face or back element
+ * @param {number} [duration=350]
+ * @returns {Promise<void>}
+ */
+function animateCardMove(fromRect, toRect, cardContent, duration = 350) {
+  return new Promise((resolve) => {
+    const floater = document.createElement('div');
+    floater.style.position = 'fixed';
+    floater.style.left = `${fromRect.left}px`;
+    floater.style.top = `${fromRect.top}px`;
+    floater.style.width = `${fromRect.width}px`;
+    floater.style.height = `${fromRect.height}px`;
+    floater.style.zIndex = '200';
+    floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+    floater.style.pointerEvents = 'none';
+
+    if (cardContent) {
+      const clone = cardContent.cloneNode(true);
+      clone.style.width = '100%';
+      clone.style.height = '100%';
+      floater.appendChild(clone);
+    }
+
+    document.body.appendChild(floater);
+
+    requestAnimationFrame(() => {
+      floater.style.left = `${toRect.left + (toRect.width - fromRect.width) / 2}px`;
+      floater.style.top = `${toRect.top + (toRect.height - fromRect.height) / 2}px`;
+    });
+
+    setTimeout(() => {
+      if (floater.parentNode) floater.parentNode.removeChild(floater);
+      resolve();
+    }, duration + 20);
+  });
+}
+
+/**
+ * Gets the bounding rect of a pile element.
+ * @param {'draw'|'discard'} pileType
+ * @returns {DOMRect|null}
+ */
+function getPileRect(pileType) {
+  const selector = pileType === 'draw' ? '.sr-draw-pile .card' : '.sr-discard-pile .card';
+  const el = document.querySelector(`#sr-piles ${selector}`);
+  if (el) return el.getBoundingClientRect();
+  // Fallback to pile container
+  const container = document.querySelector(`#sr-piles .sr-${pileType}-pile`);
+  return container ? container.getBoundingClientRect() : null;
+}
+
+/**
+ * Gets the bounding rect of the last card in the local hand (where drawn card lands).
+ * @returns {DOMRect|null}
+ */
+function getHandEndRect() {
+  const cards = document.querySelectorAll('#sr-hand-area .sr-arc-card');
+  if (cards.length > 0) return cards[cards.length - 1].getBoundingClientRect();
+  const area = document.getElementById('sr-hand-area');
+  return area ? area.getBoundingClientRect() : null;
+}
+
+/**
+ * Gets the bounding rect of a specific card in the local hand.
+ * @param {number} index
+ * @returns {DOMRect|null}
+ */
+function getHandCardRect(index) {
+  const card = document.querySelector(`#sr-hand-area .sr-arc-card[data-hand-index="${index}"]`);
+  return card ? card.getBoundingClientRect() : null;
 }
 
 /* ======= FIREBASE WRITE ======= */
@@ -177,7 +260,7 @@ function setupLobby() {
         if (state) { state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('sr-results'); startReadyListener(); }
       }
     },
-    onGameUpdate: (gameData) => { handleRemoteUpdate(gameData); },
+    onGameUpdate: (gameData, lastMove) => { handleRemoteUpdate(gameData, lastMove); },
     onRoomDeleted: () => { showToast('Host has left. Room closed.', 3000); cleanupAndGoHome(); },
   });
 }
@@ -233,20 +316,41 @@ function renderUI() {
     onDrawPileTap: () => handleDraw('drawPile'),
     onDiscardPileTap: () => handleDraw('discardPile'),
     onHandCardTap: (idx) => handleDiscard(idx),
+    onReorder: (from, to) => handleReorder(from, to),
   });
+}
+
+function handleReorder(fromIndex, toIndex) {
+  if (!state || playerIndex == null) return;
+  const hand = [...state.players[playerIndex].hand];
+  const [card] = hand.splice(fromIndex, 1);
+  hand.splice(toIndex, 0, card);
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+  renderUI();
 }
 
 async function handleDraw(source) {
   if (!state || state.status === 'finished') return;
   if (state.currentPlayerIndex !== playerIndex) return;
   if (state.turnPhase !== 'draw') return;
+  if (_isAnimating) return;
 
   warmSpeech();
+  clearSelection();
+
+  // Capture pile rect before state change
+  const pileRect = getPileRect(source === 'drawPile' ? 'draw' : 'discard');
 
   try {
+    const oldDiscardTop = source === 'discardPile' && state.discardPile.length > 0
+      ? state.discardPile[state.discardPile.length - 1] : null;
+
     const newState = drawCard(state, source);
     if (newState.status === 'finished') {
-      // Draw pile exhaustion → game draw
       state = newState;
       await writeFullState(state, null);
       renderResults(state);
@@ -255,21 +359,43 @@ async function handleDraw(source) {
       return;
     }
     state = newState;
+    setNewlyDrawnIndex(state.players[playerIndex].hand.length - 1);
     renderUI();
-  } catch (err) { console.error(err); showToast('Draw failed'); }
+
+    // Animate: card slides from pile to hand end
+    if (pileRect) {
+      const handRect = getHandEndRect();
+      if (handRect) {
+        _isAnimating = true;
+        const cardEl = source === 'drawPile'
+          ? renderCardBack()
+          : (oldDiscardTop ? renderCardFace(oldDiscardTop) : renderCardBack());
+        await animateCardMove(pileRect, handRect, cardEl);
+        _isAnimating = false;
+      }
+    }
+  } catch (err) { console.error(err); showToast('Draw failed'); _isAnimating = false; }
 }
 
 async function handleDiscard(handIndex) {
   if (!state || state.status === 'finished') return;
   if (state.currentPlayerIndex !== playerIndex) return;
   if (state.turnPhase !== 'discard') return;
+  if (_isAnimating) return;
 
   try {
     const discardedCard = state.players[playerIndex].hand[handIndex];
+
+    // Capture card rect before state change
+    const cardRect = getHandCardRect(handIndex);
+
     const { newState, won, winGroups } = discardCard(state, handIndex);
 
     const validation = validateState(newState);
     if (!validation.valid) { showToast(`Error: ${validation.error}`); return; }
+
+    setNewlyDrawnIndex(-1);
+    clearSelection();
 
     const lastMove = {
       playerIndex,
@@ -279,6 +405,19 @@ async function handleDiscard(handIndex) {
 
     await writeFullState(newState, lastMove);
     state = newState;
+
+    // Animate: card slides from hand to discard pile
+    if (cardRect) {
+      renderUI(); // re-render with card removed
+      const discardRect = getPileRect('discard');
+      if (discardRect) {
+        _isAnimating = true;
+        const faceEl = renderCardFace(discardedCard);
+        await animateCardMove(cardRect, discardRect, faceEl);
+        _isAnimating = false;
+        renderUI(); // re-render to show updated discard pile
+      }
+    }
 
     if (won) {
       if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -291,13 +430,17 @@ async function handleDiscard(handIndex) {
     }
 
     renderUI();
-  } catch (err) { console.error(err); showToast('Discard failed'); }
+  } catch (err) { console.error(err); showToast('Discard failed'); _isAnimating = false; }
 }
 
 /* ======= REMOTE UPDATES ======= */
 
-function handleRemoteUpdate(gameData) {
+function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (_isAnimating) return;
+
+  setNewlyDrawnIndex(-1);
+  clearSelection();
 
   const playersData = {};
   playerNames.forEach((name, i) => {
@@ -308,6 +451,42 @@ function handleRemoteUpdate(gameData) {
   });
 
   const newState = deserializeState(gameData, playersData);
+
+  // Detect opponent completed turn (discard) — animate card to discard pile
+  if (lastMove && lastMove.playerIndex !== playerIndex && lastMove.discardedCard) {
+    const discardedCard = deserializeCard(lastMove.discardedCard);
+    const prevState = state;
+    state = newState;
+
+    if (state.status === 'finished') {
+      if (state.winnerIndex != null) {
+        const winner = state.players[state.winnerIndex];
+        announceWin(winner.name);
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      }
+      renderResults(state);
+      showScreen('sr-results');
+      startReadyListener();
+      return;
+    }
+
+    // Render updated state, then animate discard
+    renderUI();
+
+    const opponentChip = document.querySelector(`.sr-player-chip:nth-child(${lastMove.playerIndex + 1})`);
+    const discardRect = getPileRect('discard');
+    if (opponentChip && discardRect) {
+      _isAnimating = true;
+      const fromRect = opponentChip.getBoundingClientRect();
+      const faceEl = renderCardFace(discardedCard);
+      animateCardMove(fromRect, discardRect, faceEl, 400).then(() => {
+        _isAnimating = false;
+        renderUI();
+      });
+    }
+    return;
+  }
+
   state = newState;
 
   if (state.status === 'finished') {
@@ -453,7 +632,7 @@ export async function checkSRSession() {
           if (s === 'lobby') { state = null; setupLobby(); }
           if (s === 'ended' && state) { state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('sr-results'); startReadyListener(); }
         },
-        onGameUpdate: (gd) => { handleRemoteUpdate(gd); },
+        onGameUpdate: (gd, lm) => { handleRemoteUpdate(gd, lm); },
         onRoomDeleted: () => { showToast('Host has left. Room closed.', 3000); cleanupAndGoHome(); },
       });
       startGame();
