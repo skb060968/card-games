@@ -58,6 +58,7 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
+let _lastDrawSource = null; // track draw source for lastMove
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -85,36 +86,31 @@ let _isAnimating = false;
 
 /**
  * Animates a floating card from one rect to another.
+ * Uses CSS card dimensions for consistent sizing.
  * @param {DOMRect} fromRect
  * @param {DOMRect} toRect
- * @param {HTMLElement} cardContent - card face or back element
+ * @param {HTMLElement} cardEl - a full .card element (from renderCardFace/renderCardBack)
  * @param {number} [duration=350]
  * @returns {Promise<void>}
  */
-function animateCardMove(fromRect, toRect, cardContent, duration = 350) {
+function animateCardMove(fromRect, toRect, cardEl, duration = 350) {
   return new Promise((resolve) => {
-    const floater = document.createElement('div');
+    // Use the card element directly as the floater
+    const floater = cardEl;
     floater.style.position = 'fixed';
     floater.style.left = `${fromRect.left}px`;
     floater.style.top = `${fromRect.top}px`;
-    floater.style.width = `${fromRect.width}px`;
-    floater.style.height = `${fromRect.height}px`;
     floater.style.zIndex = '200';
     floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
     floater.style.pointerEvents = 'none';
 
-    if (cardContent) {
-      const clone = cardContent.cloneNode(true);
-      clone.style.width = '100%';
-      clone.style.height = '100%';
-      floater.appendChild(clone);
-    }
-
     document.body.appendChild(floater);
 
     requestAnimationFrame(() => {
-      floater.style.left = `${toRect.left + (toRect.width - fromRect.width) / 2}px`;
-      floater.style.top = `${toRect.top + (toRect.height - fromRect.height) / 2}px`;
+      const cardW = floater.offsetWidth;
+      const cardH = floater.offsetHeight;
+      floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
+      floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
     });
 
     setTimeout(() => {
@@ -320,6 +316,16 @@ function renderUI() {
   });
 }
 
+function renderGameplayWithState(s) {
+  if (!s) return;
+  renderGameplay(s, playerIndex, {
+    onDrawPileTap: () => handleDraw('drawPile'),
+    onDiscardPileTap: () => handleDraw('discardPile'),
+    onHandCardTap: (idx) => handleDiscard(idx),
+    onReorder: (from, to) => handleReorder(from, to),
+  });
+}
+
 function handleReorder(fromIndex, toIndex) {
   if (!state || playerIndex == null) return;
   const hand = [...state.players[playerIndex].hand];
@@ -359,12 +365,26 @@ async function handleDraw(source) {
       return;
     }
     state = newState;
-    setNewlyDrawnIndex(state.players[playerIndex].hand.length - 1);
+    _lastDrawSource = source;
+
+    // Move drawn card (last in hand) to the middle for better arc visibility
+    const hand = [...state.players[playerIndex].hand];
+    const drawnCard = hand.pop();
+    const midIdx = Math.floor(hand.length / 2);
+    hand.splice(midIdx, 0, drawnCard);
+    const newPlayers = state.players.map((p, i) => {
+      if (i === playerIndex) return { ...p, hand };
+      return { ...p };
+    });
+    state = { ...state, players: newPlayers };
+
+    setNewlyDrawnIndex(midIdx);
     renderUI();
 
-    // Animate: card slides from pile to hand end
+    // Animate: card slides from pile to hand middle
     if (pileRect) {
-      const handRect = getHandEndRect();
+      const midCard = document.querySelector(`#sr-hand-area .sr-arc-card[data-hand-index="${midIdx}"]`);
+      const handRect = midCard ? midCard.getBoundingClientRect() : getHandEndRect();
       if (handRect) {
         _isAnimating = true;
         const cardEl = source === 'drawPile'
@@ -400,23 +420,34 @@ async function handleDiscard(handIndex) {
     const lastMove = {
       playerIndex,
       discardedCard: serializeCard(discardedCard),
+      drawnFrom: _lastDrawSource || 'drawPile',
       timestamp: Date.now(),
     };
+    _lastDrawSource = null;
 
     await writeFullState(newState, lastMove);
-    state = newState;
 
     // Animate: card slides from hand to discard pile
+    // Render with OLD discard pile during animation to prevent duplicate card
     if (cardRect) {
-      renderUI(); // re-render with card removed
+      const oldDiscardPile = state.discardPile; // state still has old pile
+      state = newState;
+      // Temporarily render with old discard pile (card not yet on pile visually)
+      const tempState = { ...state, discardPile: oldDiscardPile };
+      renderGameplayWithState(tempState);
+
       const discardRect = getPileRect('discard');
       if (discardRect) {
         _isAnimating = true;
         const faceEl = renderCardFace(discardedCard);
         await animateCardMove(cardRect, discardRect, faceEl);
         _isAnimating = false;
-        renderUI(); // re-render to show updated discard pile
       }
+      // Now render with real state (card on pile)
+      renderUI();
+    } else {
+      state = newState;
+      renderUI();
     }
 
     if (won) {
@@ -452,10 +483,12 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   const newState = deserializeState(gameData, playersData);
 
-  // Detect opponent completed turn (discard) — animate card to discard pile
+  // Detect opponent completed turn — animate draw then discard
   if (lastMove && lastMove.playerIndex !== playerIndex && lastMove.discardedCard) {
     const discardedCard = deserializeCard(lastMove.discardedCard);
-    const prevState = state;
+    const drawnFrom = lastMove.drawnFrom || 'drawPile';
+    // Render with OLD discard pile during animation to prevent duplicate
+    const oldDiscardPile = state ? [...state.discardPile] : [];
     state = newState;
 
     if (state.status === 'finished') {
@@ -470,20 +503,36 @@ function handleRemoteUpdate(gameData, lastMove) {
       return;
     }
 
-    // Render updated state, then animate discard
-    renderUI();
+    // Render with old discard pile so discarded card isn't shown yet
+    const tempState = { ...state, discardPile: oldDiscardPile };
+    renderGameplayWithState(tempState);
+    _isAnimating = true;
 
-    const opponentChip = document.querySelector(`.sr-player-chip:nth-child(${lastMove.playerIndex + 1})`);
-    const discardRect = getPileRect('discard');
-    if (opponentChip && discardRect) {
-      _isAnimating = true;
-      const fromRect = opponentChip.getBoundingClientRect();
-      const faceEl = renderCardFace(discardedCard);
-      animateCardMove(fromRect, discardRect, faceEl, 400).then(() => {
-        _isAnimating = false;
-        renderUI();
-      });
-    }
+    const opponentStrip = document.querySelector('.sr-opponent-hand-strip');
+    const stripRect = opponentStrip ? opponentStrip.getBoundingClientRect() : null;
+
+    const runRemoteAnim = async () => {
+      // Step 1: Animate draw — card from pile to opponent strip
+      const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
+      if (drawPileRect && stripRect) {
+        const drawCardEl = drawnFrom === 'drawPile'
+          ? renderCardBack()
+          : renderCardBack(); // show back for opponent's draw regardless
+        await animateCardMove(drawPileRect, stripRect, drawCardEl, 300);
+      }
+
+      // Step 2: Animate discard — card from opponent strip to discard pile
+      const discardRect = getPileRect('discard');
+      if (stripRect && discardRect) {
+        const discardEl = renderCardFace(discardedCard);
+        await animateCardMove(stripRect, discardRect, discardEl, 350);
+      }
+
+      _isAnimating = false;
+      renderUI();
+    };
+
+    runRemoteAnim();
     return;
   }
 

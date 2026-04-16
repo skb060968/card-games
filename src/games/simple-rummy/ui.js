@@ -105,7 +105,7 @@ function renderPlayersBar(container, players, currentPlayerIndex, localPlayerInd
     const info = document.createElement('span');
     info.className = 'sr-chip-info';
     const displayName = i === localPlayerIndex ? 'You' : player.name;
-    info.textContent = `${displayName} (${player.hand.length})`;
+    info.textContent = displayName;
 
     slot.appendChild(emoji);
     slot.appendChild(info);

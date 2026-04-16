@@ -1126,6 +1126,9 @@ body {
   justify-content: center;
   padding: 8px 0 16px;
   overflow: visible;
+  /* Smaller cards for rummy hand to fit 11 cards on mobile */
+  --sr-card-w: 46px;
+  --sr-card-h: 64px;
 }
 
 .sr-arc {
@@ -1136,7 +1139,9 @@ body {
 }
 
 .sr-arc-card {
-  margin-left: -22px;
+  width: var(--sr-card-w);
+  height: var(--sr-card-h);
+  margin-left: -16px;
   transition: transform 0.15s, box-shadow 0.15s;
   cursor: default;
   transform-origin: bottom center;
@@ -1144,6 +1149,19 @@ body {
 
 .sr-arc-card:first-child {
   margin-left: 0;
+}
+
+.sr-arc-card .card-face {
+  font-size: 0.6rem;
+}
+
+.sr-arc-card .card-face .rank-top,
+.sr-arc-card .card-face .rank-bottom {
+  font-size: 0.55rem;
+}
+
+.sr-arc-card .card-face .suit-center {
+  font-size: 1rem;
 }
 
 /* Discardable cards glow on hover */
