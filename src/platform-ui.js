@@ -53,10 +53,6 @@ export function renderLandingPage(games, onGameSelect) {
     img.src = game.image;
     img.alt = game.name;
 
-    const name = document.createElement('span');
-    name.className = 'game-card-name';
-    name.textContent = game.name;
-
     if (!game.available) {
       const badge = document.createElement('span');
       badge.className = 'coming-soon-badge';
@@ -65,7 +61,6 @@ export function renderLandingPage(games, onGameSelect) {
     }
 
     card.appendChild(img);
-    card.appendChild(name);
 
     // Tap to select
     if (game.available) {
@@ -75,7 +70,6 @@ export function renderLandingPage(games, onGameSelect) {
         card.classList.add('selected');
         if (playBtn) {
           playBtn.disabled = false;
-          playBtn.textContent = `▶ Play ${game.name}`;
         }
       });
     }
@@ -87,11 +81,7 @@ export function renderLandingPage(games, onGameSelect) {
   // Setup play button
   if (playBtn) {
     playBtn.disabled = !selectedId;
-    if (firstAvailable) {
-      playBtn.textContent = `▶ Play ${firstAvailable.name}`;
-    } else {
-      playBtn.textContent = '▶ Play';
-    }
+    playBtn.textContent = '▶ PLAY';
 
     // Remove old listeners by cloning
     const newBtn = playBtn.cloneNode(true);
