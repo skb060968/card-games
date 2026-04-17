@@ -1,0 +1,76 @@
+﻿
+
+Multiplayer Card Games Suite
+
+Detailed Gameplay, Logic, and System Specification Document
+
+1. Multiplayer System
+
+Core Features
+
+1   Real-time multiplayer (2–4 players) 2   Turn-based synchronization
+3   Reconnection support 4   Latency tolerance
+
+Architecture
+
+1   Room-based system
+2   Real-time database as single source of truth 3   Clients listen and render updates
+2. Bluff
+
+Objective
+
+Discard all cards without being successfully challenged.
+
+Gameplay Flow
+
+1   Select cards 2   Declare rank
+3   Place cards face-down 4   Others may challenge 5   Resolve challenge
+6   Pass turn
+
+Core Logic
+
+1   Store actual cards separately 2   Validate only on challenge
+3   Assign pile to loser
+3. Flip & Match
+
+Objective
+
+Collect most cards via matching ranks.
+
+Core Logic
+
+
+1   Only one face-up card per rank 2   Match removes both cards
+3   No memory mechanic 4. Perfect Ten
+
+Objective
+
+Collect ranks 1–10.
+
+Core Logic
+
+1   Draw and discard each turn 2   Track ranks collected
+3   Check win condition after discard
+5. Poker (3-Card Simplified)
+
+Objective
+
+Win pot via best hand or folds.
+
+Gameplay Flow
+
+1   Deal 3 cards
+2   Bet / Call / Raise / Fold
+3   After one round enable Show 4   Show reveals cards
+
+Show Logic
+
+1   Enabled after all players play once 2   Ends round immediately
+3   Compare hands
+
+Hand Ranking
+
+1   Trail
+2   Pure Sequence 3   Sequence
+4   Color 5   Pair
+6   High Card

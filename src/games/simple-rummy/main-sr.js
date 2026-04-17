@@ -443,24 +443,35 @@ async function handleDiscard(handIndex) {
         await animateCardMove(cardRect, discardRect, faceEl);
         _isAnimating = false;
       }
+
+      // Check win AFTER animation
+      if (won) {
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        const winner = state.players[state.winnerIndex];
+        await announceWin(winner.name);
+        renderResults(state);
+        showScreen('sr-results');
+        startReadyListener();
+        return;
+      }
+
       // Now render with real state (card on pile)
       renderUI();
     } else {
       state = newState;
+
+      if (won) {
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        const winner = state.players[state.winnerIndex];
+        await announceWin(winner.name);
+        renderResults(state);
+        showScreen('sr-results');
+        startReadyListener();
+        return;
+      }
+
       renderUI();
     }
-
-    if (won) {
-      if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      const winner = state.players[state.winnerIndex];
-      await announceWin(winner.name);
-      renderResults(state);
-      showScreen('sr-results');
-      startReadyListener();
-      return;
-    }
-
-    renderUI();
   } catch (err) { console.error(err); showToast('Discard failed'); _isAnimating = false; }
 }
 
@@ -508,24 +519,25 @@ function handleRemoteUpdate(gameData, lastMove) {
     renderGameplayWithState(tempState);
     _isAnimating = true;
 
-    const opponentStrip = document.querySelector('.sr-opponent-hand-strip');
-    const stripRect = opponentStrip ? opponentStrip.getBoundingClientRect() : null;
-
     const runRemoteAnim = async () => {
-      // Step 1: Animate draw — card from pile to opponent strip
+      // Get animation target — opponent strip if visible, otherwise their player chip
+      const opponentStrip = document.querySelector('.sr-opponent-hand-strip');
+      const opponentChip = document.querySelector(`.sr-player-chip:nth-child(${lastMove.playerIndex + 1})`);
+      const targetEl = opponentStrip || opponentChip;
+      const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
+
+      // Step 1: Animate draw — card from pile to opponent area
       const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
-      if (drawPileRect && stripRect) {
-        const drawCardEl = drawnFrom === 'drawPile'
-          ? renderCardBack()
-          : renderCardBack(); // show back for opponent's draw regardless
-        await animateCardMove(drawPileRect, stripRect, drawCardEl, 300);
+      if (drawPileRect && targetRect) {
+        const drawCardEl = renderCardBack();
+        await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
       }
 
-      // Step 2: Animate discard — card from opponent strip to discard pile
+      // Step 2: Animate discard — card from opponent area to discard pile
       const discardRect = getPileRect('discard');
-      if (stripRect && discardRect) {
+      if (targetRect && discardRect) {
         const discardEl = renderCardFace(discardedCard);
-        await animateCardMove(stripRect, discardRect, discardEl, 350);
+        await animateCardMove(targetRect, discardRect, discardEl, 350);
       }
 
       _isAnimating = false;

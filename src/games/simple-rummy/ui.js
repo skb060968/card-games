@@ -21,7 +21,6 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   const playersBar = document.getElementById('sr-players-bar');
   const pileArea = document.getElementById('sr-piles');
   const handArea = document.getElementById('sr-hand-area');
-  const turnIndicator = document.getElementById('sr-turn-indicator');
 
   if (!pileArea || !handArea) return;
 
@@ -33,10 +32,25 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   // Opponent hand strip — show active player's face-down hand when it's not local player's turn
   if (currentTurnEl) {
     currentTurnEl.innerHTML = '';
+    const current = state.players[state.currentPlayerIndex];
     const isMe = state.currentPlayerIndex === localPlayerIndex;
 
-    if (!isMe) {
-      const current = state.players[state.currentPlayerIndex];
+    if (!isMe && current) {
+      const header = document.createElement('div');
+      header.className = 'sr-ct-header';
+
+      const emoji = document.createElement('span');
+      emoji.className = 'sr-ct-emoji';
+      emoji.textContent = current.emoji;
+
+      const name = document.createElement('span');
+      name.className = 'sr-ct-name';
+      name.textContent = `${current.name}'s Turn`;
+
+      header.appendChild(emoji);
+      header.appendChild(name);
+      currentTurnEl.appendChild(header);
+
       const count = current.hand ? current.hand.length : 10;
       if (count > 0) {
         const strip = document.createElement('div');
@@ -54,17 +68,6 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   // Piles
   const isMyDrawPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'draw';
   renderPiles(pileArea, state, isMyDrawPhase, callbacks);
-
-  // Turn indicator — show action hint only when it's local player's turn
-  if (turnIndicator) {
-    if (state.currentPlayerIndex === localPlayerIndex) {
-      turnIndicator.textContent = state.turnPhase === 'draw'
-        ? '👆 Pick a card'
-        : '👆 Tap a card to discard';
-    } else {
-      turnIndicator.textContent = '';
-    }
-  }
 
   // Local hand — arc/inverted-U layout
   const isMyDiscardPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'discard';
