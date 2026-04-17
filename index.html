@@ -324,6 +324,424 @@
         </div>
       </section>
 
+      <!-- ========== BLUFF SCREENS ========== -->
+
+      <!-- BL ONLINE CHOICE -->
+      <section id="bl-online-choice" class="screen" hidden aria-label="Bluff options">
+        <h2 class="setup-heading">Bluff</h2>
+        <button id="bl-btn-create-room" class="btn primary" type="button">🏠 Create Room</button>
+        <button id="bl-btn-join-room" class="btn secondary" type="button">🚪 Join Room</button>
+        <button id="bl-btn-back-online" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- BL CREATE ROOM -->
+      <section id="bl-create-room" class="screen" hidden aria-label="Create a Bluff room">
+        <h2 class="setup-heading">Create Room</h2>
+        <div class="setup-group">
+          <input id="bl-create-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker bl-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="bl-btn-create-submit" class="btn primary" type="button">Create</button>
+        <button id="bl-btn-back-create" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- BL JOIN ROOM -->
+      <section id="bl-join-room" class="screen" hidden aria-label="Join a Bluff room">
+        <h2 class="setup-heading">Join Room</h2>
+        <div class="setup-group">
+          <input id="bl-room-code" type="text" maxlength="4" placeholder="Room Code" autocomplete="off" class="text-input" style="text-transform:uppercase;" aria-label="Enter room code" />
+        </div>
+        <div class="setup-group">
+          <input id="bl-join-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker bl-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="bl-btn-join-submit" class="btn primary" type="button">Join</button>
+        <button id="bl-btn-back-join" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- BL LOBBY -->
+      <section id="bl-lobby" class="screen" hidden aria-label="Bluff lobby">
+        <header class="lobby-header">
+          <h2 class="lobby-title">Game Lobby</h2>
+          <p class="room-code-display">Room: <span id="bl-lobby-room-code">----</span></p>
+        </header>
+        <ul id="bl-lobby-player-list" class="player-list" aria-label="Players in lobby"></ul>
+        <div class="lobby-actions">
+          <button id="bl-btn-share-code" class="btn secondary" type="button">📋 Share Code</button>
+          <button id="bl-btn-start-online" class="btn primary" type="button" hidden>Start Game</button>
+          <button id="bl-btn-leave-lobby" class="btn secondary back-btn" type="button">← Leave</button>
+          <p id="bl-lobby-waiting" class="lobby-waiting">Waiting for host to start…</p>
+        </div>
+      </section>
+
+      <!-- BL GAMEPLAY -->
+      <section id="bl-gameplay" class="screen" hidden aria-label="Bluff game board">
+        <!-- Players bar -->
+        <div id="bl-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Center pile -->
+        <div id="bl-pile-area" class="bl-pile-area" aria-label="Center pile"></div>
+        <!-- Event bar -->
+        <div id="bl-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
+        <!-- Challenge area -->
+        <div id="bl-challenge-area" class="bl-challenge-area" hidden aria-label="Challenge window"></div>
+        <!-- Actions area (place button) -->
+        <div id="bl-actions-area" class="bl-actions-area" aria-label="Game actions"></div>
+        <!-- Local hand -->
+        <div id="bl-hand-area" class="sr-hand-area bl-hand-area" aria-label="Your hand"></div>
+        <!-- Game controls -->
+        <div class="game-controls" aria-label="Game controls">
+          <label class="mute-toggle" for="bl-mute-toggle">
+            <input id="bl-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+          </label>
+          <button id="bl-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        </div>
+      </section>
+
+      <!-- BL RANK SELECTOR OVERLAY -->
+      <div id="bl-rank-selector" class="bl-rank-overlay" hidden aria-label="Rank selector"></div>
+
+      <!-- BL CHALLENGE RESULT OVERLAY -->
+      <div id="bl-challenge-result" class="bl-challenge-result-overlay" hidden aria-label="Challenge result"></div>
+
+      <!-- BL RESULTS -->
+      <section id="bl-results" class="screen" hidden aria-label="Bluff results">
+        <header class="results-header"><h2 class="results-title">🏆 Game Over!</h2></header>
+        <div id="bl-winner-display" class="winner-display" aria-label="Winner"></div>
+        <ul id="bl-results-list" class="results-bounty-list" aria-label="All players results"></ul>
+        <div id="bl-ready-indicators" class="ready-indicators" hidden aria-label="Players ready"></div>
+        <div class="results-actions">
+          <button id="bl-btn-play-again" class="btn primary" type="button">Play Again</button>
+          <button id="bl-btn-home" class="btn secondary" type="button">Home</button>
+        </div>
+      </section>
+
+      <!-- ========== FLIP & MATCH SCREENS ========== -->
+
+      <!-- FM ONLINE CHOICE -->
+      <section id="fm-online-choice" class="screen" hidden aria-label="Flip & Match options">
+        <h2 class="setup-heading">Flip & Match</h2>
+        <button id="fm-btn-create-room" class="btn primary" type="button">🏠 Create Room</button>
+        <button id="fm-btn-join-room" class="btn secondary" type="button">🚪 Join Room</button>
+        <button id="fm-btn-back-online" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- FM CREATE ROOM -->
+      <section id="fm-create-room" class="screen" hidden aria-label="Create a Flip & Match room">
+        <h2 class="setup-heading">Create Room</h2>
+        <div class="setup-group">
+          <input id="fm-create-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker fm-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="fm-btn-create-submit" class="btn primary" type="button">Create</button>
+        <button id="fm-btn-back-create" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- FM JOIN ROOM -->
+      <section id="fm-join-room" class="screen" hidden aria-label="Join a Flip & Match room">
+        <h2 class="setup-heading">Join Room</h2>
+        <div class="setup-group">
+          <input id="fm-room-code" type="text" maxlength="4" placeholder="Room Code" autocomplete="off" class="text-input" style="text-transform:uppercase;" aria-label="Enter room code" />
+        </div>
+        <div class="setup-group">
+          <input id="fm-join-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker fm-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="fm-btn-join-submit" class="btn primary" type="button">Join</button>
+        <button id="fm-btn-back-join" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- FM LOBBY -->
+      <section id="fm-lobby" class="screen" hidden aria-label="Flip & Match lobby">
+        <header class="lobby-header">
+          <h2 class="lobby-title">Game Lobby</h2>
+          <p class="room-code-display">Room: <span id="fm-lobby-room-code">----</span></p>
+        </header>
+        <ul id="fm-lobby-player-list" class="player-list" aria-label="Players in lobby"></ul>
+        <div class="lobby-actions">
+          <button id="fm-btn-share-code" class="btn secondary" type="button">📋 Share Code</button>
+          <button id="fm-btn-start-online" class="btn primary" type="button" hidden>Start Game</button>
+          <button id="fm-btn-leave-lobby" class="btn secondary back-btn" type="button">← Leave</button>
+          <p id="fm-lobby-waiting" class="lobby-waiting">Waiting for host to start…</p>
+        </div>
+      </section>
+
+      <!-- FM GAMEPLAY -->
+      <section id="fm-gameplay" class="screen" hidden aria-label="Flip & Match game board">
+        <!-- Players bar -->
+        <div id="fm-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Event bar -->
+        <div id="fm-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
+        <!-- Card grid -->
+        <div id="fm-grid-area" class="fm-grid-area" aria-label="Card grid"></div>
+        <!-- Game controls -->
+        <div class="game-controls" aria-label="Game controls">
+          <label class="mute-toggle" for="fm-mute-toggle">
+            <input id="fm-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+          </label>
+          <button id="fm-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        </div>
+      </section>
+
+      <!-- FM RESULTS -->
+      <section id="fm-results" class="screen" hidden aria-label="Flip & Match results">
+        <header class="results-header"><h2 class="results-title">🏆 Game Over!</h2></header>
+        <div id="fm-winner-display" class="winner-display" aria-label="Winner"></div>
+        <ul id="fm-results-list" class="results-bounty-list" aria-label="All players results"></ul>
+        <div id="fm-ready-indicators" class="ready-indicators" hidden aria-label="Players ready"></div>
+        <div class="results-actions">
+          <button id="fm-btn-play-again" class="btn primary" type="button">Play Again</button>
+          <button id="fm-btn-home" class="btn secondary" type="button">Home</button>
+        </div>
+      </section>
+
+      <!-- ========== PERFECT TEN SCREENS ========== -->
+
+      <!-- PT ONLINE CHOICE -->
+      <section id="pt-online-choice" class="screen" hidden aria-label="Perfect Ten options">
+        <h2 class="setup-heading">Perfect Ten</h2>
+        <button id="pt-btn-create-room" class="btn primary" type="button">🏠 Create Room</button>
+        <button id="pt-btn-join-room" class="btn secondary" type="button">🚪 Join Room</button>
+        <button id="pt-btn-back-online" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PT CREATE ROOM -->
+      <section id="pt-create-room" class="screen" hidden aria-label="Create a Perfect Ten room">
+        <h2 class="setup-heading">Create Room</h2>
+        <div class="setup-group">
+          <input id="pt-create-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker pt-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="pt-btn-create-submit" class="btn primary" type="button">Create</button>
+        <button id="pt-btn-back-create" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PT JOIN ROOM -->
+      <section id="pt-join-room" class="screen" hidden aria-label="Join a Perfect Ten room">
+        <h2 class="setup-heading">Join Room</h2>
+        <div class="setup-group">
+          <input id="pt-room-code" type="text" maxlength="4" placeholder="Room Code" autocomplete="off" class="text-input" style="text-transform:uppercase;" aria-label="Enter room code" />
+        </div>
+        <div class="setup-group">
+          <input id="pt-join-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker pt-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="pt-btn-join-submit" class="btn primary" type="button">Join</button>
+        <button id="pt-btn-back-join" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PT LOBBY -->
+      <section id="pt-lobby" class="screen" hidden aria-label="Perfect Ten lobby">
+        <header class="lobby-header">
+          <h2 class="lobby-title">Game Lobby</h2>
+          <p class="room-code-display">Room: <span id="pt-lobby-room-code">----</span></p>
+        </header>
+        <ul id="pt-lobby-player-list" class="player-list" aria-label="Players in lobby"></ul>
+        <div class="lobby-actions">
+          <button id="pt-btn-share-code" class="btn secondary" type="button">📋 Share Code</button>
+          <button id="pt-btn-start-online" class="btn primary" type="button" hidden>Start Game</button>
+          <button id="pt-btn-leave-lobby" class="btn secondary back-btn" type="button">← Leave</button>
+          <p id="pt-lobby-waiting" class="lobby-waiting">Waiting for host to start…</p>
+        </div>
+      </section>
+
+      <!-- PT GAMEPLAY -->
+      <section id="pt-gameplay" class="screen" hidden aria-label="Perfect Ten game board">
+        <!-- Current turn player info -->
+        <div id="pt-current-turn" class="sr-current-turn" aria-label="Current turn"></div>
+        <!-- All players status bar -->
+        <div id="pt-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Draw and discard piles -->
+        <div id="pt-piles" class="sr-piles-area" aria-label="Draw and discard piles"></div>
+        <!-- Event bar -->
+        <div id="pt-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
+        <!-- Rank tracker -->
+        <div id="pt-rank-tracker-area" class="pt-rank-tracker-area" aria-label="Rank tracker"></div>
+        <!-- Local player's hand -->
+        <div id="pt-hand-area" class="sr-hand-area" aria-label="Your hand"></div>
+        <!-- Game controls -->
+        <div class="game-controls" aria-label="Game controls">
+          <label class="mute-toggle" for="pt-mute-toggle">
+            <input id="pt-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+          </label>
+          <button id="pt-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        </div>
+      </section>
+
+      <!-- PT RESULTS -->
+      <section id="pt-results" class="screen" hidden aria-label="Perfect Ten results">
+        <header class="results-header"><h2 class="results-title">🏆 Game Over!</h2></header>
+        <div id="pt-winner-display" class="winner-display" aria-label="Winner"></div>
+        <ul id="pt-results-list" class="results-bounty-list" aria-label="All players results"></ul>
+        <div id="pt-ready-indicators" class="ready-indicators" hidden aria-label="Players ready"></div>
+        <div class="results-actions">
+          <button id="pt-btn-play-again" class="btn primary" type="button">Play Again</button>
+          <button id="pt-btn-home" class="btn secondary" type="button">Home</button>
+        </div>
+      </section>
+
+      <!-- ========== POKER SCREENS ========== -->
+
+      <!-- PK ONLINE CHOICE -->
+      <section id="pk-online-choice" class="screen" hidden aria-label="Poker options">
+        <h2 class="setup-heading">Poker</h2>
+        <button id="pk-btn-create-room" class="btn primary" type="button">🏠 Create Room</button>
+        <button id="pk-btn-join-room" class="btn secondary" type="button">🚪 Join Room</button>
+        <button id="pk-btn-back-online" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PK CREATE ROOM -->
+      <section id="pk-create-room" class="screen" hidden aria-label="Create a Poker room">
+        <h2 class="setup-heading">Create Room</h2>
+        <div class="setup-group">
+          <input id="pk-create-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker pk-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="pk-btn-create-submit" class="btn primary" type="button">Create</button>
+        <button id="pk-btn-back-create" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PK JOIN ROOM -->
+      <section id="pk-join-room" class="screen" hidden aria-label="Join a Poker room">
+        <h2 class="setup-heading">Join Room</h2>
+        <div class="setup-group">
+          <input id="pk-room-code" type="text" maxlength="4" placeholder="Room Code" autocomplete="off" class="text-input" style="text-transform:uppercase;" aria-label="Enter room code" />
+        </div>
+        <div class="setup-group">
+          <input id="pk-join-name" type="text" maxlength="12" placeholder="Your Name" autocomplete="off" class="text-input" aria-label="Enter your display name" />
+        </div>
+        <div class="setup-group">
+          <label class="setup-label">Choose Avatar</label>
+          <div class="emoji-picker pk-emoji-picker" role="group" aria-label="Select your emoji avatar">
+            <button class="emoji-btn selected" type="button" data-emoji="👲">👲</button>
+            <button class="emoji-btn" type="button" data-emoji="🧑‍💼">🧑‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="👩‍💼">👩‍💼</button>
+            <button class="emoji-btn" type="button" data-emoji="🥷">🥷</button>
+            <button class="emoji-btn" type="button" data-emoji="🧙">🧙</button>
+            <button class="emoji-btn" type="button" data-emoji="🧝‍♀️">🧝‍♀️</button>
+          </div>
+        </div>
+        <button id="pk-btn-join-submit" class="btn primary" type="button">Join</button>
+        <button id="pk-btn-back-join" class="btn secondary back-btn" type="button">← Back</button>
+      </section>
+
+      <!-- PK LOBBY -->
+      <section id="pk-lobby" class="screen" hidden aria-label="Poker lobby">
+        <header class="lobby-header">
+          <h2 class="lobby-title">Game Lobby</h2>
+          <p class="room-code-display">Room: <span id="pk-lobby-room-code">----</span></p>
+        </header>
+        <ul id="pk-lobby-player-list" class="player-list" aria-label="Players in lobby"></ul>
+        <div class="lobby-actions">
+          <button id="pk-btn-share-code" class="btn secondary" type="button">📋 Share Code</button>
+          <button id="pk-btn-start-online" class="btn primary" type="button" hidden>Start Game</button>
+          <button id="pk-btn-leave-lobby" class="btn secondary back-btn" type="button">← Leave</button>
+          <p id="pk-lobby-waiting" class="lobby-waiting">Waiting for host to start…</p>
+        </div>
+      </section>
+
+      <!-- PK GAMEPLAY -->
+      <section id="pk-gameplay" class="screen" hidden aria-label="Poker game board">
+        <!-- Players bar with chip counts -->
+        <div id="pk-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Pot display -->
+        <div id="pk-pot-area" class="pk-pot-area" aria-label="Pot"></div>
+        <!-- Cards area -->
+        <div id="pk-cards-area" class="pk-cards-area" aria-label="Player cards"></div>
+        <!-- Event bar -->
+        <div id="pk-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
+        <!-- Action buttons -->
+        <div id="pk-actions-area" class="pk-actions-area" aria-label="Betting actions"></div>
+        <!-- Game controls -->
+        <div class="game-controls" aria-label="Game controls">
+          <label class="mute-toggle" for="pk-mute-toggle">
+            <input id="pk-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+          </label>
+          <button id="pk-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        </div>
+      </section>
+
+      <!-- PK RESULTS -->
+      <section id="pk-results" class="screen" hidden aria-label="Poker results">
+        <header class="results-header"><h2 class="results-title">🏆 Game Over!</h2></header>
+        <div id="pk-winner-display" class="winner-display" aria-label="Winner"></div>
+        <ul id="pk-results-list" class="results-bounty-list" aria-label="All players results"></ul>
+        <div id="pk-ready-indicators" class="ready-indicators" hidden aria-label="Players ready"></div>
+        <div class="results-actions">
+          <button id="pk-btn-play-again" class="btn primary" type="button">Play Again</button>
+          <button id="pk-btn-home" class="btn secondary" type="button">Home</button>
+        </div>
+      </section>
+
     </div><!-- /.app -->
 
     <!-- Custom modal overlay (replaces browser prompt/confirm) -->

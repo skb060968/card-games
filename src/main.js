@@ -51,6 +51,10 @@ import {
 import { db } from './shared/firebase-config.js';
 import { ref, get, update, remove, onValue, off } from 'firebase/database';
 import { initSimpleRummy, checkSRSession } from './games/simple-rummy/main-sr.js';
+import { initBluff, checkBluffSession } from './games/bluff/main-bluff.js';
+import { initFlipMatch, checkFMSession } from './games/flip-and-match/main-fm.js';
+import { initPerfectTen, checkPTSession } from './games/perfect-ten/main-pt.js';
+import { initPoker, checkPKSession } from './games/poker/main-pk.js';
 
 /* ======= CONSTANTS ======= */
 
@@ -60,10 +64,10 @@ const SESSION_KEY = 'card_games_session';
 const GAME_CONFIGS = [
   { id: 'patte-par-patta', name: 'Patte Par Patta', image: '/images/ppp-card.png', available: true },
   { id: 'simple-rummy', name: 'Rummy', image: '/images/rummy-card.png', available: true },
-  { id: 'game-3', name: 'Game 3', image: '/images/coming-soon.png', available: false },
-  { id: 'game-4', name: 'Game 4', image: '/images/coming-soon.png', available: false },
-  { id: 'game-5', name: 'Game 5', image: '/images/coming-soon.png', available: false },
-  { id: 'game-6', name: 'Game 6', image: '/images/coming-soon.png', available: false },
+  { id: 'bluff', name: 'Bluff', image: '/images/bluff-card.jpeg', available: true },
+  { id: 'flip-and-match', name: 'Flip & Match', image: '/images/fm-card.jpeg', available: true },
+  { id: 'perfect-ten', name: 'Perfect Ten', image: '/images/pt-card.jpeg', available: true },
+  { id: 'poker', name: 'Poker', image: '/images/poker-card.jpeg', available: true },
 ];
 
 /* ======= STATE ======= */
@@ -180,6 +184,14 @@ function handleGameSelect(gameId) {
     showScreen('ppp-online-choice');
   } else if (gameId === 'simple-rummy') {
     showScreen('sr-online-choice');
+  } else if (gameId === 'bluff') {
+    showScreen('bl-online-choice');
+  } else if (gameId === 'flip-and-match') {
+    showScreen('fm-online-choice');
+  } else if (gameId === 'perfect-ten') {
+    showScreen('pt-online-choice');
+  } else if (gameId === 'poker') {
+    showScreen('pk-online-choice');
   } else {
     showToast('Coming Soon!');
   }
@@ -1032,6 +1044,10 @@ async function init() {
   wireEmojiPicker('#ppp-join-room .emoji-picker');
 
   initSimpleRummy(showLandingPage, GAME_CONFIGS);
+  initBluff(showLandingPage);
+  initFlipMatch(showLandingPage);
+  initPerfectTen(showLandingPage);
+  initPoker(showLandingPage);
 
   registerServiceWorker();
 
@@ -1040,7 +1056,19 @@ async function init() {
   if (!rejoined) {
     const srRejoined = await checkSRSession();
     if (!srRejoined) {
-      showLandingPage();
+      const blRejoined = await checkBluffSession();
+      if (!blRejoined) {
+        const fmRejoined = await checkFMSession();
+        if (!fmRejoined) {
+          const ptRejoined = await checkPTSession();
+          if (!ptRejoined) {
+            const pkRejoined = await checkPKSession();
+            if (!pkRejoined) {
+              showLandingPage();
+            }
+          }
+        }
+      }
     }
   }
 }

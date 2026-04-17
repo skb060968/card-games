@@ -1208,3 +1208,639 @@ body {
 .sr-win-group .card:hover {
   transform: none;
 }
+
+/* =========================================================
+   21) BLUFF — GAMEPLAY STYLES
+   ========================================================= */
+
+/* Gameplay layout */
+#bl-gameplay {
+  gap: var(--gap-sm);
+  padding: 4px 8px;
+  min-height: 100svh;
+  justify-content: space-between;
+}
+
+/* Center pile area */
+.bl-pile-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 8px 0;
+}
+
+.bl-pile-card {
+  width: var(--card-width);
+  height: var(--card-height);
+  position: relative;
+}
+
+/* Actions area */
+.bl-actions-area {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.bl-place-btn {
+  max-width: 220px;
+}
+
+/* Hand area */
+.bl-hand-area {
+  --sr-card-w: 46px;
+  --sr-card-h: 64px;
+}
+
+.bl-hand-card.bl-card-selected {
+  box-shadow: 0 4px 14px rgba(243,156,18,0.8);
+  z-index: 20 !important;
+}
+
+/* Challenge area */
+.bl-challenge-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-panel-bg);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.bl-challenge-area[hidden] { display: none !important; }
+
+.bl-challenge-announcement {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+/* Timer bar */
+.bl-timer-container {
+  width: 100%;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bl-timer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-error));
+  border-radius: 12px;
+  transition: width 0.3s linear;
+}
+
+.bl-timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-text-light);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Bluff button */
+.bl-bluff-btn {
+  max-width: 200px;
+  font-size: 1rem;
+  animation: bl-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes bl-pulse {
+  0%, 100% { box-shadow: 0 3px 0 var(--color-wood-dark), 0 5px 10px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 3px 0 var(--color-wood-dark), 0 5px 20px rgba(243,156,18,0.5); }
+}
+
+.bl-wait-text {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  font-style: italic;
+}
+
+/* Rank selector overlay */
+.bl-rank-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.bl-rank-overlay[hidden] { display: none !important; }
+
+.bl-rank-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  width: min(320px, 88vw);
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+}
+
+.bl-rank-box h3 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.bl-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.bl-rank-btn {
+  padding: 10px 4px;
+  font-size: 1rem;
+  font-weight: 800;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #f9f9f9;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+}
+
+.bl-rank-btn:hover {
+  background: rgba(243,156,18,0.15);
+  border-color: var(--color-accent);
+}
+
+.bl-rank-btn:active {
+  transform: scale(0.95);
+}
+
+.bl-rank-cancel {
+  width: 100%;
+  max-width: none;
+  margin-top: 4px;
+}
+
+/* Challenge result overlay */
+.bl-challenge-result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  backdrop-filter: blur(3px);
+}
+
+.bl-challenge-result-overlay[hidden] { display: none !important; }
+
+.bl-result-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px 20px;
+  width: min(340px, 90vw);
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+  animation: bl-result-pop 0.3s ease-out;
+}
+
+@keyframes bl-result-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bl-result-caught {
+  color: var(--color-error);
+  font-size: 1.3rem;
+  margin: 0 0 8px;
+}
+
+.bl-result-truthful {
+  color: var(--color-success);
+  font-size: 1.3rem;
+  margin: 0 0 8px;
+}
+
+.bl-result-declared {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 10px;
+}
+
+.bl-result-cards {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.bl-result-cards .card {
+  cursor: default;
+}
+
+.bl-result-cards .card:hover {
+  transform: none;
+}
+
+.bl-result-loser {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+
+/* =========================================================
+   22) FLIP & MATCH — GAMEPLAY STYLES
+   ========================================================= */
+
+/* Gameplay layout */
+#fm-gameplay {
+  gap: var(--gap-sm);
+  padding: 4px 4px;
+  min-height: 100svh;
+  justify-content: flex-start;
+}
+
+/* Grid area */
+.fm-grid-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+/* Card grid — responsive columns */
+.fm-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  width: 100%;
+  max-width: 420px;
+  justify-items: center;
+}
+
+/* Individual cell */
+.fm-cell {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cards inside grid cells — fill the cell */
+.fm-grid-card {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.fm-grid-card .card-face,
+.fm-grid-card .card-back {
+  width: 100%;
+  height: 100%;
+}
+
+/* Smaller rank/suit text for grid cards */
+.fm-grid-card .card-face .rank-top,
+.fm-grid-card .card-face .rank-bottom {
+  font-size: 0.5rem;
+}
+
+.fm-grid-card .card-face .suit-center {
+  font-size: 0.85rem;
+}
+
+.fm-grid-card .card-back::after {
+  font-size: 0.7rem;
+}
+
+/* Disable hover lift on grid cards */
+.fm-grid-card:hover {
+  transform: none;
+}
+
+.fm-grid-card:active {
+  transform: none;
+}
+
+/* Tappable face-down cards — glow on current player's turn */
+.fm-tappable .fm-grid-card {
+  cursor: pointer !important;
+}
+
+.fm-tappable .fm-grid-card .card-back {
+  box-shadow: 0 0 6px rgba(243,156,18,0.5), 0 0 12px rgba(243,156,18,0.2);
+  transition: box-shadow 0.2s;
+}
+
+.fm-tappable .fm-grid-card:hover .card-back {
+  box-shadow: 0 0 10px rgba(243,156,18,0.8), 0 0 20px rgba(243,156,18,0.4);
+}
+
+.fm-tappable .fm-grid-card:active .card-back {
+  box-shadow: 0 0 4px rgba(243,156,18,0.3);
+}
+
+/* Collected slot — empty with reduced opacity */
+.fm-collected {
+  opacity: 0.15;
+  border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: var(--card-radius);
+}
+
+/* Wider grid on larger screens */
+@media (min-width: 768px) {
+  .fm-grid {
+    grid-template-columns: repeat(9, 1fr);
+    max-width: 540px;
+    gap: 4px;
+  }
+
+  .fm-grid-card .card-face .rank-top,
+  .fm-grid-card .card-face .rank-bottom {
+    font-size: 0.6rem;
+  }
+
+  .fm-grid-card .card-face .suit-center {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fm-grid {
+    grid-template-columns: repeat(13, 1fr);
+    max-width: 720px;
+    gap: 4px;
+  }
+
+  .fm-grid-card .card-face .rank-top,
+  .fm-grid-card .card-face .rank-bottom {
+    font-size: 0.7rem;
+  }
+
+  .fm-grid-card .card-face .suit-center {
+    font-size: 1.1rem;
+  }
+}
+
+/* =========================================================
+   PERFECT TEN — GAMEPLAY STYLES
+   ========================================================= */
+
+/* Gameplay layout */
+#pt-gameplay {
+  gap: var(--gap-sm);
+  padding: 4px 8px;
+  min-height: 100svh;
+  justify-content: space-between;
+}
+
+/* Rank tracker area */
+.pt-rank-tracker-area {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+/* Rank tracker grid — 10 cells in a row */
+.pt-rank-tracker {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pt-rank-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+/* Collected rank — green filled */
+.pt-rank-cell.pt-rank-collected {
+  background: var(--color-success);
+  color: #fff;
+  border: 2px solid var(--color-success);
+  box-shadow: 0 0 6px rgba(46, 204, 113, 0.4);
+}
+
+/* Missing rank — dimmed outline */
+.pt-rank-cell.pt-rank-missing {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Opponent rank count badge */
+.pt-opponent-rank-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+/* Responsive rank tracker */
+@media (min-width: 768px) {
+  .pt-rank-cell {
+    width: 34px;
+    height: 34px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pt-rank-cell {
+    width: 38px;
+    height: 38px;
+    font-size: 0.85rem;
+  }
+}
+
+/* =========================================================
+   POKER — GAMEPLAY STYLES
+   ========================================================= */
+
+/* Gameplay layout */
+#pk-gameplay {
+  gap: var(--gap-sm);
+  padding: 4px 8px;
+  min-height: 100svh;
+  justify-content: space-between;
+}
+
+/* Pot display */
+.pk-pot-area {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.pk-pot-display {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  text-align: center;
+  padding: 8px 20px;
+  background: var(--color-panel-bg);
+  border-radius: 12px;
+  border: 2px solid rgba(243, 156, 18, 0.3);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Chip count badge in players bar */
+.pk-chip-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-left: 4px;
+}
+
+/* Folded chip in players bar */
+.pk-chip-folded {
+  opacity: 0.4;
+}
+
+/* Cards area */
+.pk-cards-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 4px 0;
+}
+
+/* Individual player's card group */
+.pk-player-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: opacity 0.3s, box-shadow 0.3s;
+}
+
+.pk-player-cards.pk-cards-active {
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5), 0 0 20px rgba(243, 156, 18, 0.2);
+  background: rgba(243, 156, 18, 0.08);
+}
+
+.pk-player-cards.pk-cards-folded {
+  opacity: 0.35;
+}
+
+/* Player label above cards */
+.pk-card-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pk-bet-badge {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Cards row — horizontal layout */
+.pk-cards-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.pk-cards-row .card {
+  cursor: default;
+}
+
+.pk-cards-row .card:hover {
+  transform: none;
+}
+
+/* Hand ranking label */
+.pk-hand-rank {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.pk-hand-rank-winner {
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  text-shadow: 0 0 8px rgba(243, 156, 18, 0.5);
+}
+
+/* Actions area */
+.pk-actions-area {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+  min-height: 50px;
+}
+
+.pk-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 360px;
+}
+
+.pk-action-btn {
+  max-width: 120px;
+  min-width: 80px;
+  padding: 9px 10px;
+  font-size: 0.8rem;
+}
+
+.pk-raise-btn {
+  background: linear-gradient(180deg, #e67e22, #d35400);
+  box-shadow: 0 3px 0 #a04000, 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.pk-fold-btn {
+  background: linear-gradient(180deg, #e74c3c, #c0392b);
+  color: #fff;
+  box-shadow: 0 3px 0 #962d22, 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.pk-show-btn {
+  background: linear-gradient(180deg, #2ecc71, #27ae60);
+  box-shadow: 0 3px 0 #1e8449, 0 5px 10px rgba(0, 0, 0, 0.3);
+  animation: pk-show-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pk-show-pulse {
+  0%, 100% { box-shadow: 0 3px 0 #1e8449, 0 5px 10px rgba(0, 0, 0, 0.3); }
+  50% { box-shadow: 0 3px 0 #1e8449, 0 5px 20px rgba(46, 204, 113, 0.5); }
+}
+
+/* Wait text */
+.pk-wait-text {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  font-style: italic;
+  text-align: center;
+}
