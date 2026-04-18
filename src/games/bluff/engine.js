@@ -49,6 +49,9 @@ export function createGame(playerInfos) {
     status: 'playing',
     winnerIndex: null,
     deckSize: 52,
+    currentRank: null,
+    roundStartPlayer: 0,
+    playersActedThisRound: [],
   };
 }
 
@@ -74,6 +77,11 @@ export function placeCards(state, cardIndices, declaredRank) {
 
   if (!VALID_RANKS.includes(declaredRank)) {
     throw new Error(`Invalid declared rank: ${declaredRank}`);
+  }
+
+  // Round-based rank enforcement
+  if (state.currentRank !== null && state.currentRank !== undefined && declaredRank !== state.currentRank) {
+    throw new Error(`Must declare ${state.currentRank} this round (got ${declaredRank})`);
   }
 
   const playerIdx = state.currentPlayerIndex;
@@ -106,6 +114,17 @@ export function placeCards(state, cardIndices, declaredRank) {
     return { ...p };
   });
 
+  // Set currentRank if this is the first placement of the round
+  const newCurrentRank = state.currentRank || declaredRank;
+
+  // Track that this player has acted this round
+  const newPlayersActed = state.playersActedThisRound
+    ? [...state.playersActedThisRound]
+    : [];
+  if (!newPlayersActed.includes(playerIdx)) {
+    newPlayersActed.push(playerIdx);
+  }
+
   return {
     ...state,
     players: newPlayers,
@@ -118,6 +137,63 @@ export function placeCards(state, cardIndices, declaredRank) {
       count: actualCards.length,
     },
     challengeDeadline: Date.now() + CHALLENGE_WINDOW_MS,
+    currentRank: newCurrentRank,
+    roundStartPlayer: state.currentRank ? state.roundStartPlayer : playerIdx,
+    playersActedThisRound: newPlayersActed,
+  };
+}
+
+/* ======= PASS TURN ======= */
+
+/**
+ * Current player passes their turn (places no cards).
+ * Adds player to playersActedThisRound, advances turn.
+ * If all players have acted, resets the round.
+ * @param {object} state — must be in placing phase
+ * @returns {object} new GameState
+ */
+export function passCard(state) {
+  if (state.phase !== 'placing') {
+    throw new Error('Cannot pass: not in placing phase');
+  }
+
+  if (state.currentRank === null || state.currentRank === undefined) {
+    throw new Error('Cannot pass: you must pick a rank first (no current rank set)');
+  }
+
+  const playerIdx = state.currentPlayerIndex;
+  const numPlayers = state.players.length;
+
+  // Track that this player has acted this round
+  const newPlayersActed = state.playersActedThisRound
+    ? [...state.playersActedThisRound]
+    : [];
+  if (!newPlayersActed.includes(playerIdx)) {
+    newPlayersActed.push(playerIdx);
+  }
+
+  // Check if round is complete (all players have acted)
+  const roundComplete = newPlayersActed.length >= numPlayers;
+
+  const nextPlayer = (playerIdx + 1) % numPlayers;
+
+  if (roundComplete) {
+    // Round over — reset rank, next player picks a new rank
+    return {
+      ...state,
+      currentPlayerIndex: nextPlayer,
+      phase: 'placing',
+      currentRank: null,
+      roundStartPlayer: nextPlayer,
+      playersActedThisRound: [],
+    };
+  }
+
+  return {
+    ...state,
+    currentPlayerIndex: nextPlayer,
+    phase: 'placing',
+    playersActedThisRound: newPlayersActed,
   };
 }
 
@@ -214,8 +290,28 @@ export function expireChallenge(state) {
     };
   }
 
+  const numPlayers = state.players.length;
+  const playersActed = state.playersActedThisRound || [];
+
+  // Check if round is complete (all players have acted)
+  const roundComplete = playersActed.length >= numPlayers;
+
   // Advance turn to next player after the placer
-  const nextPlayer = (placerIndex + 1) % state.players.length;
+  const nextPlayer = (placerIndex + 1) % numPlayers;
+
+  if (roundComplete) {
+    // Round over — reset rank, next player picks a new rank
+    return {
+      ...state,
+      currentPlayerIndex: nextPlayer,
+      phase: 'placing',
+      lastPlacement: null,
+      challengeDeadline: null,
+      currentRank: null,
+      roundStartPlayer: nextPlayer,
+      playersActedThisRound: [],
+    };
+  }
 
   return {
     ...state,
@@ -286,6 +382,9 @@ export function serializeState(state) {
     handCounts,
     lastPlacement,
     challengeDeadline: state.challengeDeadline,
+    currentRank: state.currentRank || null,
+    roundStartPlayer: state.roundStartPlayer || 0,
+    playersActedThisRound: state.playersActedThisRound || [],
   };
 }
 
@@ -343,5 +442,12 @@ export function deserializeState(gameData, playersData) {
     status: gameData.status || 'playing',
     winnerIndex: gameData.winnerIndex != null ? gameData.winnerIndex : null,
     deckSize: gameData.deckSize || 52,
+    currentRank: gameData.currentRank || null,
+    roundStartPlayer: gameData.roundStartPlayer || 0,
+    playersActedThisRound: gameData.playersActedThisRound
+      ? (Array.isArray(gameData.playersActedThisRound)
+          ? gameData.playersActedThisRound
+          : Object.values(gameData.playersActedThisRound))
+      : [],
   };
 }

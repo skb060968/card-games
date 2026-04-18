@@ -36,7 +36,7 @@ export function clearSelection() {
  * Renders the full Bluff gameplay screen.
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
- * @param {object} callbacks - { onPlaceCards, onChallenge }
+ * @param {object} callbacks - { onPlaceCards, onChallenge, onPass }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
   const allPlayersBar = document.getElementById('bl-all-players');
@@ -53,6 +53,9 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   // Self bar
   renderSelfBar(state, localPlayerIndex);
 
+  // Round rank indicator
+  renderRoundRankIndicator(state);
+
   // Center pile
   if (pileArea) {
     renderCenterPile(pileArea, state.centerPile.length);
@@ -65,12 +68,15 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
     renderHand(handArea, state.players[localPlayerIndex].hand, canSelect);
   }
 
-  // Actions area (place button)
+  // Actions area (place button + pass button)
   if (actionsArea) {
     actionsArea.innerHTML = '';
     const isMyTurn = state.currentPlayerIndex === localPlayerIndex;
 
     if (isMyTurn && state.phase === 'placing') {
+      const btnRow = document.createElement('div');
+      btnRow.className = 'bl-action-row';
+
       const placeBtn = document.createElement('button');
       placeBtn.className = 'btn primary bl-place-btn';
       placeBtn.type = 'button';
@@ -82,7 +88,21 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
           callbacks.onPlaceCards([..._selectedIndices]);
         }
       });
-      actionsArea.appendChild(placeBtn);
+      btnRow.appendChild(placeBtn);
+
+      // Pass button — only when a rank is already set (can't pass if you need to pick a rank)
+      if (state.currentRank) {
+        const passBtn = document.createElement('button');
+        passBtn.className = 'btn secondary bl-pass-btn';
+        passBtn.type = 'button';
+        passBtn.textContent = '⏭ Pass';
+        passBtn.addEventListener('click', () => {
+          if (callbacks.onPass) callbacks.onPass();
+        });
+        btnRow.appendChild(passBtn);
+      }
+
+      actionsArea.appendChild(btnRow);
     }
   }
 }
@@ -138,6 +158,32 @@ function renderSelfBar(state, localPlayerIndex) {
   if (!self) return;
   emojiEl.textContent = self.emoji;
   nameEl.textContent = self.name;
+}
+
+/**
+ * Renders the current round rank indicator above the pile area.
+ * Shows "Round: Xs" when a rank is active, or "Pick a rank" when null.
+ */
+function renderRoundRankIndicator(state) {
+  let indicator = document.getElementById('bl-round-rank-indicator');
+
+  // Create the indicator element if it doesn't exist
+  if (!indicator) {
+    const pileArea = document.getElementById('bl-pile-area');
+    if (!pileArea) return;
+    indicator = document.createElement('div');
+    indicator.id = 'bl-round-rank-indicator';
+    indicator.className = 'bl-round-rank-indicator';
+    pileArea.parentNode.insertBefore(indicator, pileArea);
+  }
+
+  if (state.currentRank) {
+    indicator.textContent = `Round: ${state.currentRank}s`;
+    indicator.className = 'bl-round-rank-indicator bl-round-rank-active';
+  } else {
+    indicator.textContent = '🎯 Pick a rank';
+    indicator.className = 'bl-round-rank-indicator bl-round-rank-pick';
+  }
 }
 
 /**

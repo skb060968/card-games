@@ -765,6 +765,31 @@
 
     </div><!-- /.app -->
 
+    <!-- ========== WIN REVEAL OVERLAYS ========== -->
+
+    <!-- Simple Rummy Win Reveal -->
+    <div id="sr-win-reveal" class="win-reveal-overlay" hidden aria-label="Winner reveal">
+      <div class="win-reveal-content">
+        <div class="win-reveal-header">
+          <span id="sr-reveal-emoji" class="win-reveal-emoji"></span>
+          <span id="sr-reveal-name" class="win-reveal-name"></span>
+        </div>
+        <div id="sr-reveal-cards" class="win-reveal-cards"></div>
+      </div>
+    </div>
+
+    <!-- Perfect Ten Win Reveal -->
+    <div id="pt-win-reveal" class="win-reveal-overlay" hidden aria-label="Winner reveal">
+      <div class="win-reveal-content">
+        <div class="win-reveal-header">
+          <span id="pt-reveal-emoji" class="win-reveal-emoji"></span>
+          <span id="pt-reveal-name" class="win-reveal-name"></span>
+        </div>
+        <div id="pt-reveal-tracker" class="win-reveal-tracker"></div>
+        <div id="pt-reveal-cards" class="win-reveal-cards"></div>
+      </div>
+    </div>
+
     <!-- Custom modal overlay (replaces browser prompt/confirm) -->
     <div id="custom-modal" class="modal-overlay" hidden>
       <div class="modal-box" role="dialog" aria-modal="true">

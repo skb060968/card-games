@@ -22,6 +22,7 @@ import {
   renderWinDisplay,
   setNewlyDrawnIndex,
   clearSelection,
+  showWinReveal,
 } from './ui.js';
 import {
   announceWin,
@@ -427,6 +428,9 @@ async function handleDiscard(handIndex) {
     };
     _lastDrawSource = null;
 
+    // Set animating flag BEFORE Firebase write to block listener re-renders
+    _isAnimating = true;
+
     await writeFullState(newState, lastMove);
 
     // Animate: card slides from hand to discard pile
@@ -440,18 +444,18 @@ async function handleDiscard(handIndex) {
 
       const discardRect = getPileRect('discard');
       if (discardRect) {
-        _isAnimating = true;
         playSound('throw');
         const faceEl = renderCardFace(discardedCard);
         await animateCardMove(cardRect, discardRect, faceEl);
-        _isAnimating = false;
       }
 
+      _isAnimating = false;
       // Check win AFTER animation
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         const winner = state.players[state.winnerIndex];
-        await announceWin(winner.name);
+        announceWin(winner.name);
+        await showWinReveal(winner, state.winGroups || [], 4000);
         renderResults(state);
         showScreen('sr-results');
         startReadyListener();
@@ -468,7 +472,8 @@ async function handleDiscard(handIndex) {
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         const winner = state.players[state.winnerIndex];
-        await announceWin(winner.name);
+        announceWin(winner.name);
+        await showWinReveal(winner, state.winGroups || [], 4000);
         renderResults(state);
         showScreen('sr-results');
         startReadyListener();
@@ -510,12 +515,18 @@ function handleRemoteUpdate(gameData, lastMove) {
     if (state.status === 'finished') {
       if (state.winnerIndex != null) {
         const winner = state.players[state.winnerIndex];
-        announceWin(winner.name);
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        announceWin(winner.name);
+        showWinReveal(winner, state.winGroups || [], 4000).then(() => {
+          renderResults(state);
+          showScreen('sr-results');
+          startReadyListener();
+        });
+      } else {
+        renderResults(state);
+        showScreen('sr-results');
+        startReadyListener();
       }
-      renderResults(state);
-      showScreen('sr-results');
-      startReadyListener();
       return;
     }
 
@@ -564,12 +575,18 @@ function handleRemoteUpdate(gameData, lastMove) {
   if (state.status === 'finished') {
     if (state.winnerIndex != null) {
       const winner = state.players[state.winnerIndex];
-      announceWin(winner.name);
       if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      announceWin(winner.name);
+      showWinReveal(winner, state.winGroups || [], 4000).then(() => {
+        renderResults(state);
+        showScreen('sr-results');
+        startReadyListener();
+      });
+    } else {
+      renderResults(state);
+      showScreen('sr-results');
+      startReadyListener();
     }
-    renderResults(state);
-    showScreen('sr-results');
-    startReadyListener();
     return;
   }
 

@@ -1459,6 +1459,50 @@ body {
   margin: 0;
 }
 
+/* Round rank indicator */
+.bl-round-rank-indicator {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: 10px;
+  margin: 0 auto 4px;
+  max-width: 220px;
+  letter-spacing: 0.5px;
+}
+
+.bl-round-rank-active {
+  background: rgba(243,156,18,0.18);
+  color: var(--color-accent);
+  border: 1.5px solid rgba(243,156,18,0.4);
+}
+
+.bl-round-rank-pick {
+  background: rgba(255,255,255,0.08);
+  color: var(--color-text-light);
+  border: 1.5px dashed rgba(255,255,255,0.25);
+  opacity: 0.8;
+}
+
+/* Action row (place + pass buttons) */
+.bl-action-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.bl-pass-btn {
+  max-width: 120px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.bl-pass-btn:hover {
+  opacity: 1;
+}
+
 
 /* =========================================================
    22) FLIP & MATCH — GAMEPLAY STYLES
@@ -2203,4 +2247,166 @@ body {
   opacity: 0.65;
   font-style: italic;
   text-align: center;
+}
+
+
+/* =========================================================
+   WIN REVEAL OVERLAY
+   Full-screen overlay shown before results when a player wins.
+   ========================================================= */
+
+.win-reveal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+  animation: win-reveal-fade-in 0.3s ease-out;
+}
+
+.win-reveal-overlay[hidden] { display: none !important; }
+
+@keyframes win-reveal-fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.win-reveal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 20px;
+  max-width: 400px;
+  width: 90vw;
+  background: var(--color-panel-bg-strong);
+  border-radius: 18px;
+  border: 2px solid rgba(243, 156, 18, 0.4);
+  box-shadow: 0 0 40px rgba(243, 156, 18, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: win-reveal-pop 0.4s ease-out;
+}
+
+@keyframes win-reveal-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.win-reveal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.win-reveal-emoji {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.win-reveal-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  text-shadow: 0 2px 8px rgba(243, 156, 18, 0.4);
+  text-align: center;
+}
+
+.win-reveal-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Rummy: grouped cards using existing sr-win-groups / sr-win-group styles */
+.win-reveal-cards .sr-win-groups {
+  margin-top: 0;
+}
+
+.win-reveal-cards .sr-win-group .card {
+  width: 42px;
+  height: 58px;
+}
+
+.win-reveal-cards .sr-win-group .card .card-face .rank-top,
+.win-reveal-cards .sr-win-group .card .card-face .rank-bottom {
+  font-size: 0.5rem;
+}
+
+.win-reveal-cards .sr-win-group .card .card-face .suit-center {
+  font-size: 0.9rem;
+}
+
+/* Perfect Ten: rank tracker inside reveal */
+.win-reveal-tracker {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.win-reveal-tracker .pt-rank-tracker {
+  gap: 3px;
+}
+
+.win-reveal-tracker .pt-rank-cell {
+  width: 26px;
+  height: 26px;
+  font-size: 0.6rem;
+}
+
+/* Perfect Ten: face-up cards in reveal */
+.win-reveal-cards .win-reveal-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.win-reveal-cards .win-reveal-hand .card {
+  width: 42px;
+  height: 58px;
+  cursor: default;
+}
+
+.win-reveal-cards .win-reveal-hand .card:hover {
+  transform: none;
+}
+
+.win-reveal-cards .win-reveal-hand .card .card-face .rank-top,
+.win-reveal-cards .win-reveal-hand .card .card-face .rank-bottom {
+  font-size: 0.5rem;
+}
+
+.win-reveal-cards .win-reveal-hand .card .card-face .suit-center {
+  font-size: 0.9rem;
+}
+
+/* Responsive: slightly larger cards on bigger screens */
+@media (min-width: 768px) {
+  .win-reveal-content {
+    max-width: 460px;
+    padding: 32px 24px;
+  }
+
+  .win-reveal-cards .sr-win-group .card,
+  .win-reveal-cards .win-reveal-hand .card {
+    width: 50px;
+    height: 70px;
+  }
+
+  .win-reveal-cards .sr-win-group .card .card-face .suit-center,
+  .win-reveal-cards .win-reveal-hand .card .card-face .suit-center {
+    font-size: 1rem;
+  }
+
+  .win-reveal-tracker .pt-rank-cell {
+    width: 30px;
+    height: 30px;
+    font-size: 0.7rem;
+  }
 }

@@ -311,6 +311,60 @@ export function renderWinDisplay(groups, winner) {
   display.appendChild(groupsContainer);
 }
 
+/* ======= WIN REVEAL ======= */
+
+/**
+ * Shows a full-screen win reveal overlay with the winner's grouped cards.
+ * Returns a Promise that resolves after the specified duration.
+ * @param {object} winner - { name, emoji }
+ * @param {Array<Array<{rank:string, suit:string}>>} winGroups - grouped cards
+ * @param {number} [duration=4000] - ms to show overlay
+ * @returns {Promise<void>}
+ */
+export function showWinReveal(winner, winGroups, duration = 4000) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('sr-win-reveal');
+    const emojiEl = document.getElementById('sr-reveal-emoji');
+    const nameEl = document.getElementById('sr-reveal-name');
+    const cardsEl = document.getElementById('sr-reveal-cards');
+
+    if (!overlay || !cardsEl) { resolve(); return; }
+
+    // Populate header
+    if (emojiEl) emojiEl.textContent = winner.emoji || '🏆';
+    if (nameEl) nameEl.textContent = `${winner.name} wins!`;
+
+    // Populate grouped cards
+    cardsEl.innerHTML = '';
+    if (winGroups && winGroups.length > 0) {
+      const groupsContainer = document.createElement('div');
+      groupsContainer.className = 'sr-win-groups';
+
+      winGroups.forEach((group) => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'sr-win-group';
+        group.forEach((card) => {
+          const cardEl = renderCardFace(card);
+          cardEl.style.cursor = 'default';
+          groupEl.appendChild(cardEl);
+        });
+        groupsContainer.appendChild(groupEl);
+      });
+
+      cardsEl.appendChild(groupsContainer);
+    }
+
+    // Show overlay
+    overlay.hidden = false;
+
+    // Auto-dismiss after duration
+    setTimeout(() => {
+      overlay.hidden = true;
+      resolve();
+    }, duration);
+  });
+}
+
 /* ======= RESULTS ======= */
 
 /**

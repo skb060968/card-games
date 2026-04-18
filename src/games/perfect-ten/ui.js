@@ -325,6 +325,61 @@ function renderPiles(container, state, isMyDrawPhase, callbacks) {
   container.appendChild(wrapper);
 }
 
+/* ======= WIN REVEAL ======= */
+
+/**
+ * Shows a full-screen win reveal overlay with the winner's hand and rank tracker.
+ * Returns a Promise that resolves after the specified duration.
+ * @param {object} winner - { name, emoji, hand }
+ * @param {Array<{rank:string, suit:string}>} hand - winner's cards
+ * @param {number} [duration=4000] - ms to show overlay
+ * @returns {Promise<void>}
+ */
+export function showWinReveal(winner, hand, duration = 4000) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('pt-win-reveal');
+    const emojiEl = document.getElementById('pt-reveal-emoji');
+    const nameEl = document.getElementById('pt-reveal-name');
+    const trackerEl = document.getElementById('pt-reveal-tracker');
+    const cardsEl = document.getElementById('pt-reveal-cards');
+
+    if (!overlay || !cardsEl) { resolve(); return; }
+
+    // Populate header
+    if (emojiEl) emojiEl.textContent = winner.emoji || '🏆';
+    if (nameEl) nameEl.textContent = `${winner.name} wins!`;
+
+    // Populate rank tracker (all green for winner)
+    if (trackerEl) {
+      trackerEl.innerHTML = '';
+      const tracker = renderRankTracker(hand || []);
+      trackerEl.appendChild(tracker);
+    }
+
+    // Populate face-up cards
+    cardsEl.innerHTML = '';
+    if (hand && hand.length > 0) {
+      const handContainer = document.createElement('div');
+      handContainer.className = 'win-reveal-hand';
+      hand.forEach((card) => {
+        const cardEl = renderCardFace(card);
+        cardEl.style.cursor = 'default';
+        handContainer.appendChild(cardEl);
+      });
+      cardsEl.appendChild(handContainer);
+    }
+
+    // Show overlay
+    overlay.hidden = false;
+
+    // Auto-dismiss after duration
+    setTimeout(() => {
+      overlay.hidden = true;
+      resolve();
+    }, duration);
+  });
+}
+
 /* ======= RESULTS ======= */
 
 /**

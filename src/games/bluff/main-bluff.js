@@ -9,6 +9,7 @@ import { showScreen, showToast } from '../../platform-ui.js';
 import {
   createGame,
   placeCards,
+  passCard,
   resolveChallenge,
   expireChallenge,
   validateState,
@@ -343,6 +344,7 @@ function renderUI() {
   renderGameplay(state, playerIndex, {
     onPlaceCards: (indices) => handlePlacement(indices),
     onChallenge: () => handleChallenge(),
+    onPass: () => handlePass(),
   });
 }
 
@@ -354,7 +356,44 @@ async function handlePlacement(cardIndices) {
 
   warmSpeech();
 
-  // Show rank selector
+  // If a rank is already set for this round, place directly with that rank
+  if (state.currentRank) {
+    try {
+      const newState = placeCards(state, cardIndices, state.currentRank);
+
+      const validation = validateState(newState);
+      if (!validation.valid) {
+        showToast(`Error: ${validation.error}`);
+        return;
+      }
+
+      state = newState;
+      clearSelection();
+
+      playSound('throw');
+
+      const lp = state.lastPlacement;
+      const lastMove = {
+        playerIndex,
+        action: 'place',
+        declaredRank: lp.declaredRank,
+        count: lp.count,
+        timestamp: Date.now(),
+      };
+
+      await writeFullState(state, lastMove);
+
+      setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      renderUI();
+      startChallengeCountdown();
+    } catch (err) {
+      console.error('Placement failed:', err);
+      showToast(err.message || 'Placement failed');
+    }
+    return;
+  }
+
+  // No rank set — first player of the round picks via rank selector
   renderRankSelector(async (declaredRank) => {
     try {
       const newState = placeCards(state, cardIndices, declaredRank);
@@ -389,6 +428,36 @@ async function handlePlacement(cardIndices) {
       showToast(err.message || 'Placement failed');
     }
   });
+}
+
+/* ======= PASS ======= */
+
+async function handlePass() {
+  if (!state || state.phase !== 'placing') return;
+  if (state.currentPlayerIndex !== playerIndex) return;
+  if (!state.currentRank) return; // Can't pass if no rank is set
+
+  try {
+    const newState = passCard(state);
+    state = newState;
+    clearSelection();
+
+    playSound('capture'); // subtle sound for pass
+
+    const lastMove = {
+      playerIndex,
+      action: 'pass',
+      timestamp: Date.now(),
+    };
+
+    await writeFullState(state, lastMove);
+
+    setEventMessage('You passed');
+    renderUI();
+  } catch (err) {
+    console.error('Pass failed:', err);
+    showToast(err.message || 'Pass failed');
+  }
 }
 
 /* ======= CHALLENGE ======= */
@@ -570,6 +639,17 @@ function handleRemoteUpdate(gameData, lastMove) {
         }
       }
     }, 300);
+    return;
+  }
+
+  // Detect pass from remote (another player passed)
+  if (lastMove && lastMove.action === 'pass' && lastMove.playerIndex !== playerIndex) {
+    state = newState;
+    clearSelection();
+    playSound('capture');
+    const passerName = state.players[lastMove.playerIndex]?.name || 'Player';
+    setEventMessage(`${passerName} passed`);
+    renderUI();
     return;
   }
 
