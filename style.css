@@ -1472,7 +1472,142 @@ body {
   justify-content: flex-start;
 }
 
-/* Grid area */
+/* --- Opponents area (top) --- */
+.fm-opponents-area {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 4px 0;
+}
+
+/* --- Player block (opponent) --- */
+.fm-player-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  min-width: 70px;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.fm-player-block.fm-active-turn {
+  box-shadow: 0 0 12px rgba(243,156,18,0.7), 0 0 24px rgba(243,156,18,0.3);
+  background: rgba(243,156,18,0.12);
+  border-color: var(--color-accent);
+}
+
+.fm-player-block.fm-active-turn .fm-block-name {
+  color: var(--color-accent);
+}
+
+.fm-block-emoji {
+  font-size: 1.3rem;
+}
+
+.fm-block-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  max-width: 70px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fm-block-count {
+  font-size: 0.65rem;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+/* --- Won cards mini deck --- */
+.fm-won-deck {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-height: 18px;
+  padding-right: 4px;
+}
+
+.fm-won-deck-empty {
+  opacity: 0.3;
+}
+
+.fm-mini-card {
+  width: 14px;
+  height: 20px;
+  border-radius: 2px;
+  border: 1.5px solid #f5e6c8;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.06) 2px,
+      rgba(255,255,255,0.06) 3px
+    ),
+    radial-gradient(ellipse at center, #8b1a2b 0%, #4a0e1a 100%);
+  margin-left: -6px;
+  flex-shrink: 0;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.fm-mini-card:first-child {
+  margin-left: 0;
+}
+
+.fm-won-badge {
+  font-size: 0.55rem;
+  font-weight: 800;
+  background: var(--color-accent);
+  color: #1a1a1a;
+  border-radius: 8px;
+  padding: 1px 4px;
+  margin-left: 3px;
+  line-height: 1.2;
+}
+
+/* --- Self block (bottom) --- */
+.fm-self-area {
+  width: 100%;
+  padding: 4px 0;
+}
+
+.fm-self-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.fm-self-block.fm-active-turn {
+  box-shadow: 0 0 12px rgba(243,156,18,0.7), 0 0 24px rgba(243,156,18,0.3);
+  background: rgba(243,156,18,0.12);
+  border-color: var(--color-accent);
+}
+
+.fm-self-block.fm-active-turn .fm-block-name {
+  color: var(--color-accent);
+}
+
+.fm-self-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --- Grid area --- */
 .fm-grid-area {
   width: 100%;
   display: flex;
@@ -1480,7 +1615,7 @@ body {
   padding: 4px 0;
 }
 
-/* Card grid — responsive columns */
+/* Card grid — 7 columns × 8 rows */
 .fm-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1500,10 +1635,16 @@ body {
   justify-content: center;
 }
 
+/* Blank corner cells */
+.fm-blank {
+  visibility: hidden;
+}
+
 /* Cards inside grid cells — fill the cell */
 .fm-grid-card {
   width: 100% !important;
   height: 100% !important;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .fm-grid-card .card-face,
@@ -1560,11 +1701,42 @@ body {
   border-radius: var(--card-radius);
 }
 
-/* Wider grid on larger screens */
+/* --- Match animation: rise + gold glow --- */
+@keyframes fm-match-rise {
+  0% { transform: translateY(0); box-shadow: 0 0 0 rgba(243,156,18,0); }
+  100% { transform: translateY(-20px); box-shadow: 0 0 20px rgba(243,156,18,0.9), 0 0 40px rgba(243,156,18,0.4); }
+}
+
+.fm-match-rise {
+  animation: fm-match-rise 0.3s ease-out forwards;
+  z-index: 100;
+  position: relative;
+}
+
+/* --- Match animation: sweep toward winner deck --- */
+@keyframes fm-match-sweep {
+  0% {
+    transform: translateY(-20px);
+    box-shadow: 0 0 20px rgba(243,156,18,0.9), 0 0 40px rgba(243,156,18,0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sweep-x, 0), var(--sweep-y, -100px));
+    box-shadow: 0 0 10px rgba(243,156,18,0.5);
+    opacity: 0;
+  }
+}
+
+.fm-match-sweep {
+  animation: fm-match-sweep 0.6s ease-in forwards;
+  z-index: 100;
+  position: relative;
+}
+
+/* --- Responsive: wider grid on larger screens --- */
 @media (min-width: 768px) {
   .fm-grid {
-    grid-template-columns: repeat(9, 1fr);
-    max-width: 540px;
+    max-width: 480px;
     gap: 4px;
   }
 
@@ -1576,13 +1748,27 @@ body {
   .fm-grid-card .card-face .suit-center {
     font-size: 1rem;
   }
+
+  .fm-player-block {
+    min-width: 90px;
+    padding: 8px 12px;
+  }
+
+  .fm-block-name {
+    font-size: 0.8rem;
+    max-width: 90px;
+  }
+
+  .fm-mini-card {
+    width: 16px;
+    height: 22px;
+  }
 }
 
 @media (min-width: 1024px) {
   .fm-grid {
-    grid-template-columns: repeat(13, 1fr);
-    max-width: 720px;
-    gap: 4px;
+    max-width: 540px;
+    gap: 5px;
   }
 
   .fm-grid-card .card-face .rank-top,
@@ -1592,6 +1778,180 @@ body {
 
   .fm-grid-card .card-face .suit-center {
     font-size: 1.1rem;
+  }
+
+  .fm-player-block {
+    min-width: 100px;
+  }
+
+  .fm-mini-card {
+    width: 18px;
+    height: 24px;
+  }
+}
+
+/* =========================================================
+   UNIFIED GAME LAYOUT — All-Players Bar + Self Bar
+   Shared by Simple Rummy, Perfect Ten, and future games.
+   ========================================================= */
+
+/* All-players bar at top */
+.game-all-players {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 4px 0;
+}
+
+/* Individual player block */
+.game-player-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  min-width: 60px;
+  transition: box-shadow 0.3s, background 0.3s, border-color 0.3s;
+}
+
+/* Active turn — gold glow */
+.game-player-block.game-block-active {
+  box-shadow: 0 0 12px rgba(243,156,18,0.7), 0 0 24px rgba(243,156,18,0.3);
+  background: rgba(243,156,18,0.12);
+  border-color: var(--color-accent);
+}
+
+.game-player-block.game-block-active .game-block-name {
+  color: var(--color-accent);
+}
+
+/* Self — dashed border */
+.game-player-block.game-block-self {
+  border-style: dashed;
+}
+
+.game-block-emoji {
+  font-size: 1.1rem;
+}
+
+.game-block-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  max-width: 64px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Extra info line (e.g. rank count for PT) */
+.game-block-extra {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  opacity: 0.9;
+}
+
+/* Mini face-down card strip inside player block */
+.game-card-strip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 28px;
+}
+
+.game-strip-card {
+  width: 20px;
+  height: 28px;
+  border-radius: 3px;
+  border: 1.5px solid #f5e6c8;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.06) 2px,
+      rgba(255,255,255,0.06) 3px
+    ),
+    radial-gradient(ellipse at center, #8b1a2b 0%, #4a0e1a 100%);
+  margin-left: -8px;
+  flex-shrink: 0;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.game-strip-card:first-child {
+  margin-left: 0;
+}
+
+/* Self info bar at bottom */
+.game-self-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.15);
+}
+
+.game-self-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-self-emoji {
+  font-size: 1.2rem;
+}
+
+.game-self-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.game-self-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .game-player-block {
+    min-width: 72px;
+    padding: 6px 10px;
+  }
+
+  .game-block-name {
+    font-size: 0.7rem;
+    max-width: 72px;
+  }
+
+  .game-strip-card {
+    width: 22px;
+    height: 30px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .game-player-block {
+    min-width: 80px;
+  }
+
+  .game-block-name {
+    font-size: 0.75rem;
+    max-width: 80px;
+  }
+
+  .game-strip-card {
+    width: 24px;
+    height: 32px;
   }
 }
 

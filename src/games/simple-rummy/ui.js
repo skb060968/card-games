@@ -1,8 +1,8 @@
 /**
  * Simple Rummy — UI Module
  *
- * Renders gameplay screen: fan hand, draw/discard piles,
- * opponent hands, turn indicator, win display.
+ * Renders gameplay screen: all-players bar with face-down strips,
+ * draw/discard piles, local hand with arc layout, self info bar.
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
@@ -11,59 +11,25 @@ import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 
 /**
  * Renders the full Simple Rummy gameplay screen.
- * Layout: players bar (all players) → current turn info → piles → turn indicator → local hand
+ * Layout: all-players bar → piles → local hand → self bar
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
- * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap }
+ * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap, onReorder }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
-  const currentTurnEl = document.getElementById('sr-current-turn');
-  const playersBar = document.getElementById('sr-players-bar');
+  const allPlayersEl = document.getElementById('sr-all-players');
   const pileArea = document.getElementById('sr-piles');
   const handArea = document.getElementById('sr-hand-area');
 
   if (!pileArea || !handArea) return;
 
-  // Players bar — compact chips for all players, active highlighted
-  if (playersBar) {
-    renderPlayersBar(playersBar, state.players, state.currentPlayerIndex, localPlayerIndex);
+  // All-players bar — compact blocks with face-down card strips
+  if (allPlayersEl) {
+    renderAllPlayers(allPlayersEl, state, localPlayerIndex);
   }
 
-  // Opponent hand strip — show active player's face-down hand when it's not local player's turn
-  if (currentTurnEl) {
-    currentTurnEl.innerHTML = '';
-    const current = state.players[state.currentPlayerIndex];
-    const isMe = state.currentPlayerIndex === localPlayerIndex;
-
-    if (!isMe && current) {
-      const header = document.createElement('div');
-      header.className = 'sr-ct-header';
-
-      const emoji = document.createElement('span');
-      emoji.className = 'sr-ct-emoji';
-      emoji.textContent = current.emoji;
-
-      const name = document.createElement('span');
-      name.className = 'sr-ct-name';
-      name.textContent = `${current.name}'s Turn`;
-
-      header.appendChild(emoji);
-      header.appendChild(name);
-      currentTurnEl.appendChild(header);
-
-      const count = current.hand ? current.hand.length : 10;
-      if (count > 0) {
-        const strip = document.createElement('div');
-        strip.className = 'sr-opponent-hand-strip';
-        for (let c = 0; c < count; c++) {
-          const back = renderCardBack();
-          back.classList.add('sr-strip-card');
-          strip.appendChild(back);
-        }
-        currentTurnEl.appendChild(strip);
-      }
-    }
-  }
+  // Self info bar
+  renderSelfBar(state, localPlayerIndex);
 
   // Piles
   const isMyDrawPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'draw';
@@ -74,32 +40,57 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onReorder);
 }
 
+/* ======= ALL-PLAYERS BAR ======= */
+
 /**
- * Renders a compact players bar showing all players.
- * Each player shows emoji + name + card count. Active turn gets highlight.
+ * Renders all player blocks at the top.
+ * Each block: emoji + name + face-down card strip (showing card count).
+ * Active turn gets gold glow. Self gets dashed border.
  */
-function renderPlayersBar(container, players, currentPlayerIndex, localPlayerIndex) {
+function renderAllPlayers(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
-  players.forEach((player, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'sr-player-chip';
-    if (i === currentPlayerIndex) slot.classList.add('sr-chip-active');
-    if (i === localPlayerIndex) slot.classList.add('sr-chip-me');
+  state.players.forEach((player, i) => {
+    const block = document.createElement('div');
+    block.className = 'game-player-block';
+    block.dataset.playerIndex = String(i);
+    if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
+    if (i === localPlayerIndex) block.classList.add('game-block-self');
 
     const emoji = document.createElement('span');
-    emoji.className = 'sr-chip-emoji';
+    emoji.className = 'game-block-emoji';
     emoji.textContent = player.emoji;
 
-    const info = document.createElement('span');
-    info.className = 'sr-chip-info';
-    const displayName = i === localPlayerIndex ? 'You' : player.name;
-    info.textContent = displayName;
+    const name = document.createElement('span');
+    name.className = 'game-block-name';
+    name.textContent = i === localPlayerIndex ? 'You' : player.name;
 
-    slot.appendChild(emoji);
-    slot.appendChild(info);
-    container.appendChild(slot);
+    const strip = document.createElement('div');
+    strip.className = 'game-card-strip';
+    const count = player.hand ? player.hand.length : 10;
+    for (let c = 0; c < count; c++) {
+      const miniCard = document.createElement('div');
+      miniCard.className = 'game-strip-card';
+      strip.appendChild(miniCard);
+    }
+
+    block.appendChild(emoji);
+    block.appendChild(name);
+    block.appendChild(strip);
+    container.appendChild(block);
   });
+}
+
+/* ======= SELF BAR ======= */
+
+function renderSelfBar(state, localPlayerIndex) {
+  const emojiEl = document.getElementById('sr-self-emoji');
+  const nameEl = document.getElementById('sr-self-name');
+  if (!emojiEl || !nameEl) return;
+  const self = state.players[localPlayerIndex];
+  if (!self) return;
+  emojiEl.textContent = self.emoji;
+  nameEl.textContent = self.name;
 }
 
 /* ======= ARC HAND (Inverted-U) ======= */
@@ -125,12 +116,6 @@ export function setNewlyDrawnIndex(idx) {
  * - Discard phase (canDiscard=true): first tap selects card (lifts + gold glow),
  *   second tap on same card confirms discard, tapping different card switches selection.
  * - Otherwise: tap to select for reorder, tap another position to move.
- *
- * @param {HTMLElement} container
- * @param {Array<{rank: string, suit: string}>} hand
- * @param {boolean} canDiscard
- * @param {Function} onCardTap - callback(handIndex) for confirmed discard
- * @param {Function} [onReorder] - callback(fromIndex, toIndex) for rearranging
  */
 export function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
   container.innerHTML = '';
@@ -287,8 +272,6 @@ function renderPiles(container, state, isMyDrawPhase, callbacks) {
 
 /**
  * Renders the winning hand grouped into sets/sequences.
- * @param {Array<Array<{rank: string, suit: string}>>} groups
- * @param {{name: string, emoji: string}} winner
  */
 export function renderWinDisplay(groups, winner) {
   const display = document.getElementById('sr-winner-display');
@@ -331,7 +314,6 @@ export function renderWinDisplay(groups, winner) {
 
 /**
  * Renders the results screen.
- * @param {object} state
  */
 export function renderResults(state) {
   const display = document.getElementById('sr-winner-display');

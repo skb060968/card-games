@@ -1,8 +1,8 @@
 /**
  * Perfect Ten — UI Module
  *
- * Renders gameplay screen: players bar, draw/discard piles,
- * rank tracker, local hand with arc layout, lobby, results.
+ * Renders gameplay screen: all-players bar with face-down strips + rank count,
+ * draw/discard piles, rank tracker, local hand with arc layout, self info bar.
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
@@ -36,60 +36,26 @@ export function clearSelection() {
 
 /**
  * Renders the full Perfect Ten gameplay screen.
- * Layout: players bar → current turn info → piles → rank tracker → local hand
+ * Layout: all-players bar → piles → rank tracker → local hand → self bar
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
  * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap, onReorder }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
-  const currentTurnEl = document.getElementById('pt-current-turn');
-  const playersBar = document.getElementById('pt-players-bar');
+  const allPlayersEl = document.getElementById('pt-all-players');
   const pileArea = document.getElementById('pt-piles');
   const rankTrackerArea = document.getElementById('pt-rank-tracker-area');
   const handArea = document.getElementById('pt-hand-area');
 
   if (!pileArea || !handArea) return;
 
-  // Players bar — compact chips for all players
-  if (playersBar) {
-    renderPlayersBar(playersBar, state, localPlayerIndex);
+  // All-players bar — compact blocks with face-down card strips + rank count
+  if (allPlayersEl) {
+    renderAllPlayers(allPlayersEl, state, localPlayerIndex);
   }
 
-  // Opponent hand strip — show active player's face-down hand when not local player's turn
-  if (currentTurnEl) {
-    currentTurnEl.innerHTML = '';
-    const current = state.players[state.currentPlayerIndex];
-    const isMe = state.currentPlayerIndex === localPlayerIndex;
-
-    if (!isMe && current) {
-      const header = document.createElement('div');
-      header.className = 'sr-ct-header';
-
-      const emoji = document.createElement('span');
-      emoji.className = 'sr-ct-emoji';
-      emoji.textContent = current.emoji;
-
-      const name = document.createElement('span');
-      name.className = 'sr-ct-name';
-      name.textContent = `${current.name}'s Turn`;
-
-      header.appendChild(emoji);
-      header.appendChild(name);
-      currentTurnEl.appendChild(header);
-
-      const count = current.hand ? current.hand.length : 5;
-      if (count > 0) {
-        const strip = document.createElement('div');
-        strip.className = 'sr-opponent-hand-strip';
-        for (let c = 0; c < count; c++) {
-          const back = renderCardBack();
-          back.classList.add('sr-strip-card');
-          strip.appendChild(back);
-        }
-        currentTurnEl.appendChild(strip);
-      }
-    }
-  }
+  // Self info bar
+  renderSelfBar(state, localPlayerIndex);
 
   // Piles
   const isMyDrawPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'draw';
@@ -108,42 +74,64 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onReorder);
 }
 
-/* ======= PLAYERS BAR ======= */
+/* ======= ALL-PLAYERS BAR ======= */
 
 /**
- * Renders a compact players bar showing all players.
- * Each player shows emoji + name + rank count. Active turn gets highlight.
+ * Renders all player blocks at the top.
+ * Each block: emoji + name + face-down card strip + rank count (X/10).
+ * Active turn gets gold glow. Self gets dashed border.
  */
-function renderPlayersBar(container, state, localPlayerIndex) {
+function renderAllPlayers(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
   state.players.forEach((player, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'sr-player-chip';
-    if (i === state.currentPlayerIndex) slot.classList.add('sr-chip-active');
-    if (i === localPlayerIndex) slot.classList.add('sr-chip-me');
+    const block = document.createElement('div');
+    block.className = 'game-player-block';
+    block.dataset.playerIndex = String(i);
+    if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
+    if (i === localPlayerIndex) block.classList.add('game-block-self');
 
     const emoji = document.createElement('span');
-    emoji.className = 'sr-chip-emoji';
+    emoji.className = 'game-block-emoji';
     emoji.textContent = player.emoji;
 
-    const info = document.createElement('span');
-    info.className = 'sr-chip-info';
-    const displayName = i === localPlayerIndex ? 'You' : player.name;
+    const name = document.createElement('span');
+    name.className = 'game-block-name';
+    name.textContent = i === localPlayerIndex ? 'You' : player.name;
 
-    // Show rank count for opponents
-    if (i !== localPlayerIndex) {
-      const collected = getCollectedRanks(player.hand);
-      info.textContent = `${displayName} (${collected.size}/10)`;
-    } else {
-      const collected = getCollectedRanks(player.hand);
-      info.textContent = `${displayName} (${collected.size}/10)`;
+    const strip = document.createElement('div');
+    strip.className = 'game-card-strip';
+    const count = player.hand ? player.hand.length : 5;
+    for (let c = 0; c < count; c++) {
+      const miniCard = document.createElement('div');
+      miniCard.className = 'game-strip-card';
+      strip.appendChild(miniCard);
     }
 
-    slot.appendChild(emoji);
-    slot.appendChild(info);
-    container.appendChild(slot);
+    // Rank count extra info
+    const collected = getCollectedRanks(player.hand);
+    const extra = document.createElement('span');
+    extra.className = 'game-block-extra';
+    extra.textContent = `${collected.size}/10`;
+
+    block.appendChild(emoji);
+    block.appendChild(name);
+    block.appendChild(strip);
+    block.appendChild(extra);
+    container.appendChild(block);
   });
+}
+
+/* ======= SELF BAR ======= */
+
+function renderSelfBar(state, localPlayerIndex) {
+  const emojiEl = document.getElementById('pt-self-emoji');
+  const nameEl = document.getElementById('pt-self-name');
+  if (!emojiEl || !nameEl) return;
+  const self = state.players[localPlayerIndex];
+  if (!self) return;
+  emojiEl.textContent = self.emoji;
+  nameEl.textContent = self.name;
 }
 
 /* ======= RANK TRACKER ======= */

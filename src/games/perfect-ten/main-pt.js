@@ -493,9 +493,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     _isAnimating = true;
 
     const runRemoteAnim = async () => {
-      const opponentStrip = document.querySelector('#pt-current-turn .sr-opponent-hand-strip');
-      const opponentChip = document.querySelector(`#pt-players-bar .sr-player-chip:nth-child(${lastMove.playerIndex + 1})`);
-      const targetEl = opponentStrip || opponentChip;
+      // Get animation target — the opponent's player block in the all-players bar
+      const targetEl = document.querySelector(`#pt-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
       const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
 
       // Step 1: Animate draw

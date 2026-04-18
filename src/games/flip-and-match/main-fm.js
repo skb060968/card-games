@@ -2,7 +2,8 @@
  * Flip & Match — Main Wiring Module
  *
  * Handles all Flip & Match game flows: create/join room, lobby,
- * gameplay (flip cards, match detection), results, session persistence.
+ * gameplay (flip cards, match detection, match animation), results,
+ * session persistence.
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
@@ -20,6 +21,7 @@ import {
   renderLobbyPlayers,
   renderReadyIndicators,
   setEventMessage,
+  animateMatch,
 } from './ui.js';
 import {
   announceCapture,
@@ -322,27 +324,52 @@ async function handleFlip(cardIndex) {
       return;
     }
 
-    // Sound effects
+    // Sound: flip
     playSound('throw');
 
     if (matched) {
-      playSound('capture');
       const currentPlayer = state.players[playerIndex];
-      announceCapture(currentPlayer.name);
       const rank = flippedCard.rank;
       setEventMessage(`${currentPlayer.emoji} ${currentPlayer.name} matched ${rank}s!`);
+
+      // Show the flipped card face-up before animation
+      // Temporarily update board to show both cards face-up for animation
+      const tempBoard = state.board.map((s, i) => {
+        if (i === cardIndex) return { ...s, state: 'up' };
+        return { ...s };
+      });
+      const tempState = { ...state, board: tempBoard };
+      renderGameplay(tempState, playerIndex, handleFlip);
+
+      // Sound: capture
+      playSound('capture');
+      announceCapture(currentPlayer.name);
+
+      // Animate match (rise + glow + sweep)
+      await animateMatch(cardIndex, matchedIndex, playerIndex, playerIndex);
+
+      // Small delay so all players can see what happened
+      await new Promise((r) => setTimeout(r, 500));
+
+      state = stateToWrite;
+
+      if (endResult.finished) {
+        handleWin();
+        return;
+      }
+
+      renderUI();
     } else {
       setEventMessage('No match — card stays face-up');
+      state = stateToWrite;
+
+      if (endResult.finished) {
+        handleWin();
+        return;
+      }
+
+      renderUI();
     }
-
-    state = stateToWrite;
-
-    if (endResult.finished) {
-      handleWin();
-      return;
-    }
-
-    renderUI();
   } catch (err) {
     console.error('Flip failed:', err);
     showToast(err.message || 'Flip failed');
@@ -369,7 +396,7 @@ async function handleWin() {
 
 /* ======= REMOTE UPDATES ======= */
 
-function handleRemoteUpdate(gameData, lastMove) {
+async function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
   if (isProcessingFlip) return;
 
@@ -385,27 +412,68 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   // Detect remote flip
   if (lastMove && lastMove.playerIndex !== playerIndex) {
-    state = newState;
+    isProcessingFlip = true;
 
     playSound('throw');
 
     if (lastMove.matched) {
+      const flipper = newState.players[lastMove.playerIndex];
+
+      // Show the board state before collection (both cards face-up) for animation
+      // Build a temp state where both matched cards are still face-up
+      const prevBoard = state ? [...state.board] : [];
+      if (prevBoard.length > 0 && lastMove.cardIndex < prevBoard.length) {
+        // Show the flipped card as face-up
+        const tempBoard = prevBoard.map((s, i) => {
+          if (i === lastMove.cardIndex) return { ...s, state: 'up' };
+          return { ...s };
+        });
+        const tempState = { ...state, board: tempBoard, players: newState.players };
+        renderGameplay(tempState, playerIndex, handleFlip);
+      }
+
       playSound('capture');
-      const flipper = state.players[lastMove.playerIndex];
       if (flipper) {
         announceCapture(flipper.name);
         setEventMessage(`${flipper.emoji} ${flipper.name} matched!`);
       }
+
+      // Animate match for remote player
+      await animateMatch(
+        lastMove.cardIndex,
+        lastMove.matchedIndex,
+        lastMove.playerIndex,
+        playerIndex
+      );
+
+      // Small delay
+      await new Promise((r) => setTimeout(r, 500));
+
+      state = newState;
+
+      if (state.status === 'finished') {
+        isProcessingFlip = false;
+        handleWin();
+        return;
+      }
+
+      renderUI();
+      isProcessingFlip = false;
+      return;
     } else {
       setEventMessage('No match — card stays face-up');
     }
 
+    state = newState;
+
     if (state.status === 'finished') {
+      isProcessingFlip = false;
       handleWin();
       return;
     }
 
     renderUI();
+    isProcessingFlip = false;
     return;
   }
 

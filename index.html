@@ -296,19 +296,24 @@
 
       <!-- SR GAMEPLAY -->
       <section id="sr-gameplay" class="screen" hidden aria-label="Rummy game board">
-        <!-- Current turn player info -->
-        <div id="sr-current-turn" class="sr-current-turn" aria-label="Current turn"></div>
-        <!-- All players status bar -->
-        <div id="sr-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Top: All players blocks -->
+        <div id="sr-all-players" class="game-all-players" aria-label="All players"></div>
         <!-- Draw and discard piles -->
         <div id="sr-piles" class="sr-piles-area" aria-label="Draw and discard piles"></div>
         <!-- Local player's hand -->
         <div id="sr-hand-area" class="sr-hand-area" aria-label="Your hand"></div>
-        <div class="game-controls">
-          <label class="mute-toggle" for="sr-mute-toggle">
-            <input id="sr-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
-          </label>
-          <button id="sr-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        <!-- Bottom: Self info bar -->
+        <div id="sr-self-bar" class="game-self-bar" aria-label="Your info">
+          <div class="game-self-info">
+            <span id="sr-self-emoji" class="game-self-emoji"></span>
+            <span id="sr-self-name" class="game-self-name"></span>
+          </div>
+          <div class="game-self-controls">
+            <label class="mute-toggle" for="sr-mute-toggle">
+              <input id="sr-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+            </label>
+            <button id="sr-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+          </div>
         </div>
       </section>
 
@@ -507,13 +512,15 @@
 
       <!-- FM GAMEPLAY -->
       <section id="fm-gameplay" class="screen" hidden aria-label="Flip & Match game board">
-        <!-- Players bar -->
-        <div id="fm-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Top: Other players blocks -->
+        <div id="fm-opponents-area" class="fm-opponents-area" aria-label="Other players"></div>
         <!-- Event bar -->
         <div id="fm-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
-        <!-- Card grid -->
+        <!-- Middle: Card grid (7×8) -->
         <div id="fm-grid-area" class="fm-grid-area" aria-label="Card grid"></div>
-        <!-- Game controls -->
+        <!-- Bottom: Self block -->
+        <div id="fm-self-area" class="fm-self-area" aria-label="Your info"></div>
+        <!-- Controls bar -->
         <div class="game-controls" aria-label="Game controls">
           <label class="mute-toggle" for="fm-mute-toggle">
             <input id="fm-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
@@ -606,24 +613,26 @@
 
       <!-- PT GAMEPLAY -->
       <section id="pt-gameplay" class="screen" hidden aria-label="Perfect Ten game board">
-        <!-- Current turn player info -->
-        <div id="pt-current-turn" class="sr-current-turn" aria-label="Current turn"></div>
-        <!-- All players status bar -->
-        <div id="pt-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Top: All players blocks -->
+        <div id="pt-all-players" class="game-all-players" aria-label="All players"></div>
         <!-- Draw and discard piles -->
         <div id="pt-piles" class="sr-piles-area" aria-label="Draw and discard piles"></div>
-        <!-- Event bar -->
-        <div id="pt-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
         <!-- Rank tracker -->
         <div id="pt-rank-tracker-area" class="pt-rank-tracker-area" aria-label="Rank tracker"></div>
         <!-- Local player's hand -->
         <div id="pt-hand-area" class="sr-hand-area" aria-label="Your hand"></div>
-        <!-- Game controls -->
-        <div class="game-controls" aria-label="Game controls">
-          <label class="mute-toggle" for="pt-mute-toggle">
-            <input id="pt-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
-          </label>
-          <button id="pt-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        <!-- Bottom: Self info bar -->
+        <div id="pt-self-bar" class="game-self-bar" aria-label="Your info">
+          <div class="game-self-info">
+            <span id="pt-self-emoji" class="game-self-emoji"></span>
+            <span id="pt-self-name" class="game-self-name"></span>
+          </div>
+          <div class="game-self-controls">
+            <label class="mute-toggle" for="pt-mute-toggle">
+              <input id="pt-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+            </label>
+            <button id="pt-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+          </div>
         </div>
       </section>
 

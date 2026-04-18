@@ -520,10 +520,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     _isAnimating = true;
 
     const runRemoteAnim = async () => {
-      // Get animation target — opponent strip if visible, otherwise their player chip
-      const opponentStrip = document.querySelector('.sr-opponent-hand-strip');
-      const opponentChip = document.querySelector(`.sr-player-chip:nth-child(${lastMove.playerIndex + 1})`);
-      const targetEl = opponentStrip || opponentChip;
+      // Get animation target — the opponent's player block in the all-players bar
+      const targetEl = document.querySelector(`#sr-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
       const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
 
       // Step 1: Animate draw — card from pile to opponent area
