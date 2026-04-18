@@ -401,8 +401,8 @@
 
       <!-- BL GAMEPLAY -->
       <section id="bl-gameplay" class="screen" hidden aria-label="Bluff game board">
-        <!-- Players bar -->
-        <div id="bl-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Top: All players blocks (opponents only) -->
+        <div id="bl-all-players" class="game-all-players" aria-label="All players"></div>
         <!-- Center pile -->
         <div id="bl-pile-area" class="bl-pile-area" aria-label="Center pile"></div>
         <!-- Event bar -->
@@ -413,12 +413,18 @@
         <div id="bl-actions-area" class="bl-actions-area" aria-label="Game actions"></div>
         <!-- Local hand -->
         <div id="bl-hand-area" class="sr-hand-area bl-hand-area" aria-label="Your hand"></div>
-        <!-- Game controls -->
-        <div class="game-controls" aria-label="Game controls">
-          <label class="mute-toggle" for="bl-mute-toggle">
-            <input id="bl-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
-          </label>
-          <button id="bl-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        <!-- Bottom: Self info bar -->
+        <div id="bl-self-bar" class="game-self-bar" aria-label="Your info">
+          <div class="game-self-info">
+            <span id="bl-self-emoji" class="game-self-emoji"></span>
+            <span id="bl-self-name" class="game-self-name"></span>
+          </div>
+          <div class="game-self-controls">
+            <label class="mute-toggle" for="bl-mute-toggle">
+              <input id="bl-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+            </label>
+            <button id="bl-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+          </div>
         </div>
       </section>
 
@@ -720,8 +726,8 @@
 
       <!-- PK GAMEPLAY -->
       <section id="pk-gameplay" class="screen" hidden aria-label="Poker game board">
-        <!-- Players bar with chip counts -->
-        <div id="pk-players-bar" class="sr-players-bar" aria-label="Players"></div>
+        <!-- Top: All players blocks (opponents only) -->
+        <div id="pk-all-players" class="game-all-players" aria-label="All players"></div>
         <!-- Pot display -->
         <div id="pk-pot-area" class="pk-pot-area" aria-label="Pot"></div>
         <!-- Cards area -->
@@ -730,12 +736,18 @@
         <div id="pk-event-bar" class="event-bar" aria-live="polite" aria-label="Game events"></div>
         <!-- Action buttons -->
         <div id="pk-actions-area" class="pk-actions-area" aria-label="Betting actions"></div>
-        <!-- Game controls -->
-        <div class="game-controls" aria-label="Game controls">
-          <label class="mute-toggle" for="pk-mute-toggle">
-            <input id="pk-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
-          </label>
-          <button id="pk-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+        <!-- Bottom: Self info bar -->
+        <div id="pk-self-bar" class="game-self-bar" aria-label="Your info">
+          <div class="game-self-info">
+            <span id="pk-self-emoji" class="game-self-emoji"></span>
+            <span id="pk-self-name" class="game-self-name"></span>
+          </div>
+          <div class="game-self-controls">
+            <label class="mute-toggle" for="pk-mute-toggle">
+              <input id="pk-mute-toggle" type="checkbox" aria-label="Toggle sound mute" /> 🔇 Mute
+            </label>
+            <button id="pk-btn-end-game" class="btn-end-game" type="button" hidden title="End Game">✕</button>
+          </div>
         </div>
       </section>
 

@@ -51,11 +51,12 @@ function renderAllPlayers(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
   state.players.forEach((player, i) => {
+    if (i === localPlayerIndex) return;
+
     const block = document.createElement('div');
     block.className = 'game-player-block';
     block.dataset.playerIndex = String(i);
     if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
-    if (i === localPlayerIndex) block.classList.add('game-block-self');
 
     const emoji = document.createElement('span');
     emoji.className = 'game-block-emoji';
@@ -63,7 +64,7 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 
     const name = document.createElement('span');
     name.className = 'game-block-name';
-    name.textContent = i === localPlayerIndex ? 'You' : player.name;
+    name.textContent = player.name;
 
     const strip = document.createElement('div');
     strip.className = 'game-card-strip';

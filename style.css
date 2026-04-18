@@ -1466,7 +1466,7 @@ body {
 
 /* Gameplay layout */
 #fm-gameplay {
-  gap: var(--gap-sm);
+  gap: 2px;
   padding: 4px 4px;
   min-height: 100svh;
   justify-content: flex-start;
@@ -1479,7 +1479,7 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   width: 100%;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 /* --- Player block (opponent) --- */
@@ -1612,7 +1612,7 @@ body {
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 4px 0;
+  padding: 0;
 }
 
 /* Card grid — 7 columns × 8 rows */

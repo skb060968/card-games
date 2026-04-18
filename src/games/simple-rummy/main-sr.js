@@ -29,6 +29,7 @@ import {
   toggleMute,
   isMuted,
   warmSpeech,
+  playSound,
 } from '../../shared/voice-announcer.js';
 import {
   createRoom,
@@ -387,6 +388,7 @@ async function handleDraw(source) {
       const handRect = midCard ? midCard.getBoundingClientRect() : getHandEndRect();
       if (handRect) {
         _isAnimating = true;
+        playSound('throw');
         const cardEl = source === 'drawPile'
           ? renderCardBack()
           : (oldDiscardTop ? renderCardFace(oldDiscardTop) : renderCardBack());
@@ -439,6 +441,7 @@ async function handleDiscard(handIndex) {
       const discardRect = getPileRect('discard');
       if (discardRect) {
         _isAnimating = true;
+        playSound('throw');
         const faceEl = renderCardFace(discardedCard);
         await animateCardMove(cardRect, discardRect, faceEl);
         _isAnimating = false;
@@ -459,6 +462,8 @@ async function handleDiscard(handIndex) {
       renderUI();
     } else {
       state = newState;
+
+      playSound('throw');
 
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -527,16 +532,24 @@ function handleRemoteUpdate(gameData, lastMove) {
       // Step 1: Animate draw — card from pile to opponent area
       const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
       if (drawPileRect && targetRect) {
+        playSound('throw');
         const drawCardEl = renderCardBack();
         await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
       }
 
+      // Pause between draw and discard so viewer can see each step
+      await new Promise((r) => setTimeout(r, 400));
+
       // Step 2: Animate discard — card from opponent area to discard pile
       const discardRect = getPileRect('discard');
       if (targetRect && discardRect) {
+        playSound('throw');
         const discardEl = renderCardFace(discardedCard);
         await animateCardMove(targetRect, discardRect, discardEl, 350);
       }
+
+      // Brief pause before re-rendering
+      await new Promise((r) => setTimeout(r, 300));
 
       _isAnimating = false;
       renderUI();

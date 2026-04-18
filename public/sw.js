@@ -5,16 +5,22 @@
    - Update detection + prompt support
    ============================== */
 
-const CACHE_NAME = "card-games-v2";
+const CACHE_NAME = "card-games-v3";
 
 // Pre-cache truly static assets (not Vite-hashed JS/CSS)
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/images/card-back.png",
-  "/images/coming-soon.png",
   "/images/ppp-card.png",
+  "/images/rummy-card.png",
+  "/images/bluff-card.jpeg",
+  "/images/fm-card.jpeg",
+  "/images/pt-card.jpeg",
+  "/images/poker-card.jpeg",
+  "/images/coming-soon.png",
+  "/sounds/throw.mp3",
+  "/sounds/capture.mp3",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
 ];

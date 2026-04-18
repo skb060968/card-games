@@ -18,16 +18,19 @@ import { evaluateHand } from './engine.js';
  * @param {object} callbacks - { onAction: (action) => void }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
-  const playersBar = document.getElementById('pk-players-bar');
+  const allPlayersBar = document.getElementById('pk-all-players');
   const potArea = document.getElementById('pk-pot-area');
   const cardsArea = document.getElementById('pk-cards-area');
   const actionsArea = document.getElementById('pk-actions-area');
   const eventBar = document.getElementById('pk-event-bar');
 
-  // Players bar
-  if (playersBar) {
-    renderPlayersBar(playersBar, state, localPlayerIndex);
+  // All players bar (opponents only)
+  if (allPlayersBar) {
+    renderAllPlayers(allPlayersBar, state, localPlayerIndex);
   }
+
+  // Self bar
+  renderSelfBar(state, localPlayerIndex);
 
   // Pot display
   if (potArea) {
@@ -46,37 +49,62 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
 }
 
 /**
- * Renders compact players bar with chip counts.
+ * Renders all player blocks at the top (opponents only).
+ * Each block: emoji + name + face-down card strip (3 cards for poker) + chip count.
+ * Active turn gets gold glow. Folded players get dimmed opacity. Skips self.
  */
-function renderPlayersBar(container, state, localPlayerIndex) {
+function renderAllPlayers(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
   state.players.forEach((player, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'sr-player-chip';
-    if (i === state.currentPlayerIndex) slot.classList.add('sr-chip-active');
-    if (i === localPlayerIndex) slot.classList.add('sr-chip-me');
-    if (player.folded) slot.classList.add('pk-chip-folded');
+    if (i === localPlayerIndex) return;
+
+    const block = document.createElement('div');
+    block.className = 'game-player-block';
+    block.dataset.playerIndex = String(i);
+    if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
+    if (player.folded) block.style.opacity = '0.4';
 
     const emoji = document.createElement('span');
-    emoji.className = 'sr-chip-emoji';
+    emoji.className = 'game-block-emoji';
     emoji.textContent = player.emoji;
 
-    const info = document.createElement('span');
-    info.className = 'sr-chip-info';
-    const displayName = i === localPlayerIndex ? 'You' : player.name;
-    const foldedTag = player.folded ? ' 🚫' : '';
-    info.textContent = `${displayName}${foldedTag}`;
+    const name = document.createElement('span');
+    name.className = 'game-block-name';
+    name.textContent = player.name;
+
+    const strip = document.createElement('div');
+    strip.className = 'game-card-strip';
+    const count = player.hand ? player.hand.length : 3;
+    for (let c = 0; c < count; c++) {
+      const miniCard = document.createElement('div');
+      miniCard.className = 'game-strip-card';
+      strip.appendChild(miniCard);
+    }
 
     const chipsBadge = document.createElement('span');
-    chipsBadge.className = 'pk-chip-count';
+    chipsBadge.className = 'game-block-extra';
     chipsBadge.textContent = `💰${player.chips}`;
 
-    slot.appendChild(emoji);
-    slot.appendChild(info);
-    slot.appendChild(chipsBadge);
-    container.appendChild(slot);
+    block.appendChild(emoji);
+    block.appendChild(name);
+    block.appendChild(strip);
+    block.appendChild(chipsBadge);
+    container.appendChild(block);
   });
+}
+
+/**
+ * Renders the self bar at the bottom with emoji and name.
+ */
+function renderSelfBar(state, localPlayerIndex) {
+  const emojiEl = document.getElementById('pk-self-emoji');
+  const nameEl = document.getElementById('pk-self-name');
+  if (!emojiEl || !nameEl) return;
+  const self = state.players[localPlayerIndex];
+  if (!self) return;
+  emojiEl.textContent = self.emoji;
+  nameEl.textContent = self.name;
 }
 
 /**

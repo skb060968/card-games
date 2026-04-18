@@ -39,16 +39,19 @@ export function clearSelection() {
  * @param {object} callbacks - { onPlaceCards, onChallenge }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
-  const playersBar = document.getElementById('bl-players-bar');
+  const allPlayersBar = document.getElementById('bl-all-players');
   const pileArea = document.getElementById('bl-pile-area');
   const eventBar = document.getElementById('bl-event-bar');
   const handArea = document.getElementById('bl-hand-area');
   const actionsArea = document.getElementById('bl-actions-area');
 
-  // Players bar
-  if (playersBar) {
-    renderPlayersBar(playersBar, state.players, state.currentPlayerIndex, localPlayerIndex);
+  // All players bar (opponents only)
+  if (allPlayersBar) {
+    renderAllPlayers(allPlayersBar, state, localPlayerIndex);
   }
+
+  // Self bar
+  renderSelfBar(state, localPlayerIndex);
 
   // Center pile
   if (pileArea) {
@@ -85,31 +88,56 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
 }
 
 /**
- * Renders compact players bar.
+ * Renders all player blocks at the top (opponents only).
+ * Each block: emoji + name + face-down card strip (showing card count).
+ * Active turn gets gold glow. Skips self.
  */
-function renderPlayersBar(container, players, currentPlayerIndex, localPlayerIndex) {
+function renderAllPlayers(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
-  players.forEach((player, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'sr-player-chip';
-    if (i === currentPlayerIndex) slot.classList.add('sr-chip-active');
-    if (i === localPlayerIndex) slot.classList.add('sr-chip-me');
+  state.players.forEach((player, i) => {
+    if (i === localPlayerIndex) return;
+
+    const block = document.createElement('div');
+    block.className = 'game-player-block';
+    block.dataset.playerIndex = String(i);
+    if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
 
     const emoji = document.createElement('span');
-    emoji.className = 'sr-chip-emoji';
+    emoji.className = 'game-block-emoji';
     emoji.textContent = player.emoji;
 
-    const info = document.createElement('span');
-    info.className = 'sr-chip-info';
-    const displayName = i === localPlayerIndex ? 'You' : player.name;
-    const cardCount = player.hand ? player.hand.length : 0;
-    info.textContent = `${displayName} (${cardCount})`;
+    const name = document.createElement('span');
+    name.className = 'game-block-name';
+    name.textContent = player.name;
 
-    slot.appendChild(emoji);
-    slot.appendChild(info);
-    container.appendChild(slot);
+    const strip = document.createElement('div');
+    strip.className = 'game-card-strip';
+    const count = player.hand ? player.hand.length : 0;
+    for (let c = 0; c < count; c++) {
+      const miniCard = document.createElement('div');
+      miniCard.className = 'game-strip-card';
+      strip.appendChild(miniCard);
+    }
+
+    block.appendChild(emoji);
+    block.appendChild(name);
+    block.appendChild(strip);
+    container.appendChild(block);
   });
+}
+
+/**
+ * Renders the self bar at the bottom with emoji and name.
+ */
+function renderSelfBar(state, localPlayerIndex) {
+  const emojiEl = document.getElementById('bl-self-emoji');
+  const nameEl = document.getElementById('bl-self-name');
+  if (!emojiEl || !nameEl) return;
+  const self = state.players[localPlayerIndex];
+  if (!self) return;
+  emojiEl.textContent = self.emoji;
+  nameEl.textContent = self.name;
 }
 
 /**

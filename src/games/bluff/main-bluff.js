@@ -368,6 +368,8 @@ async function handlePlacement(cardIndices) {
       state = newState;
       clearSelection();
 
+      playSound('throw');
+
       const lp = state.lastPlacement;
       const lastMove = {
         playerIndex,
@@ -555,15 +557,19 @@ function handleRemoteUpdate(gameData, lastMove) {
   if (lastMove && lastMove.action === 'place' && lastMove.playerIndex !== playerIndex) {
     state = newState;
     clearSelection();
+    playSound('throw');
     renderUI();
 
-    // Start challenge countdown for this client
-    if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-      const remaining = state.challengeDeadline - Date.now();
-      if (remaining > 0) {
-        startChallengeCountdown();
+    // Small delay before starting challenge countdown for remote animations
+    setTimeout(() => {
+      // Start challenge countdown for this client
+      if (state.phase === 'challengeWindow' && state.challengeDeadline) {
+        const remaining = state.challengeDeadline - Date.now();
+        if (remaining > 0) {
+          startChallengeCountdown();
+        }
       }
-    }
+    }, 300);
     return;
   }
 
