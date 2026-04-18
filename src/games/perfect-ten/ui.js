@@ -15,6 +15,7 @@ const TARGET_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 /* ======= SELECTION STATE ======= */
 
 let _selectedForDiscard = null;
+let _selectedForMove = null;
 let _newlyDrawnIndex = -1;
 
 /**
@@ -30,6 +31,7 @@ export function setNewlyDrawnIndex(idx) {
  */
 export function clearSelection() {
   _selectedForDiscard = null;
+  _selectedForMove = null;
 }
 
 /* ======= GAMEPLAY RENDERING ======= */
@@ -228,18 +230,28 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
         }
       });
     } else {
+      // Reorder mode: tap to select, tap another position to move
       cardEl.style.cursor = 'pointer';
 
+      if (_selectedForMove === i) {
+        cardEl.classList.add('sr-card-selected');
+        extraLift = 18;
+      }
+
       cardEl.addEventListener('click', () => {
-        // Reorder mode — not critical for PT but keeps consistency
-        if (onReorder) {
-          // Simple: no reorder for now, just visual
+        if (_selectedForMove === null || _selectedForMove === i) {
+          _selectedForMove = _selectedForMove === i ? null : i;
+          renderArcHand(container, hand, canDiscard, onCardTap, onReorder);
+        } else {
+          const from = _selectedForMove;
+          _selectedForMove = null;
+          if (onReorder) onReorder(from, i);
         }
       });
     }
 
     cardEl.style.transform = `translateY(${-lift - extraLift}px) rotate(${angle}deg)`;
-    cardEl.style.zIndex = _selectedForDiscard === i ? '20' : String(i);
+    cardEl.style.zIndex = _selectedForDiscard === i || _selectedForMove === i ? '20' : String(i);
 
     arc.appendChild(cardEl);
   });

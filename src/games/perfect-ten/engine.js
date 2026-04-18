@@ -12,9 +12,9 @@ import { createDeck, shuffle, serializeCard, deserializeCard } from '../../share
 
 /* ======= CONSTANTS ======= */
 
-const CARDS_PER_PLAYER = 5;
+const CARDS_PER_PLAYER = 10;
 const TARGET_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-const MAX_HAND_SIZE = 6; // 5 starting + 1 drawn before discard
+const MAX_HAND_SIZE = 11; // 10 starting + 1 drawn before discard
 
 /* ======= GAME CREATION ======= */
 
