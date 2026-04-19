@@ -83,17 +83,8 @@ export function drawCard(state, source) {
   let newDrawPile = [...state.drawPile];
   let newDiscardPile = [...state.discardPile];
 
-  // Auto-reshuffle if draw pile empty
-  if (source === 'drawPile' && newDrawPile.length === 0) {
-    if (newDiscardPile.length <= 1) {
-      // Can't reshuffle — game ends as draw
-      return {
-        ...state,
-        status: 'finished',
-        winnerIndex: null,
-        winGroups: null,
-      };
-    }
+  // Auto-reshuffle if draw pile empty (regardless of source)
+  if (newDrawPile.length === 0 && newDiscardPile.length > 1) {
     const reshuffled = reshuffleDiscardPile({
       ...state,
       drawPile: newDrawPile,
@@ -101,6 +92,17 @@ export function drawCard(state, source) {
     });
     newDrawPile = reshuffled.drawPile;
     newDiscardPile = reshuffled.discardPile;
+  }
+
+  // If still empty after reshuffle attempt and drawing from draw pile
+  if (source === 'drawPile' && newDrawPile.length === 0) {
+    // Can't draw — game ends as draw
+    return {
+      ...state,
+      status: 'finished',
+      winnerIndex: null,
+      winGroups: null,
+    };
   }
 
   let drawnCard;

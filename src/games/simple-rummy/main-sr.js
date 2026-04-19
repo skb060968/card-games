@@ -60,8 +60,7 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
-let _lastDrawSource = null; // track draw source for lastMove
-let _lastDrawnCard = null; // track drawn card for remote animation
+// _lastDrawSource and _lastDrawnCard removed — each Firebase write now carries its own lastMove
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -368,8 +367,17 @@ async function handleDraw(source) {
       return;
     }
     state = newState;
-    _lastDrawSource = source;
-    _lastDrawnCard = oldDiscardTop; // save for lastMove (null if from draw pile)
+
+    // Write 1 — after draw: write state to Firebase immediately
+    const drawLastMove = {
+      playerIndex,
+      action: 'draw',
+      drawnFrom: source,
+      drawnCard: oldDiscardTop ? serializeCard(oldDiscardTop) : null,
+      timestamp: Date.now(),
+    };
+    _isAnimating = true;
+    await writeFullState(state, drawLastMove);
 
     // Move drawn card (last in hand) to the middle for better arc visibility
     const hand = [...state.players[playerIndex].hand];
@@ -390,15 +398,14 @@ async function handleDraw(source) {
       const midCard = document.querySelector(`#sr-hand-area .sr-arc-card[data-hand-index="${midIdx}"]`);
       const handRect = midCard ? midCard.getBoundingClientRect() : getHandEndRect();
       if (handRect) {
-        _isAnimating = true;
         playSound('throw');
         const cardEl = source === 'drawPile'
           ? renderCardBack()
           : (oldDiscardTop ? renderCardFace(oldDiscardTop) : renderCardBack());
         await animateCardMove(pileRect, handRect, cardEl);
-        _isAnimating = false;
       }
     }
+    _isAnimating = false;
   } catch (err) { console.error(err); showToast('Draw failed'); _isAnimating = false; }
 }
 
@@ -422,20 +429,18 @@ async function handleDiscard(handIndex) {
     setNewlyDrawnIndex(-1);
     clearSelection();
 
-    const lastMove = {
+    // Write 2 — after discard: write state to Firebase with discard lastMove
+    const discardLastMove = {
       playerIndex,
+      action: 'discard',
       discardedCard: serializeCard(discardedCard),
-      drawnFrom: _lastDrawSource || 'drawPile',
-      drawnCard: _lastDrawnCard ? serializeCard(_lastDrawnCard) : null,
       timestamp: Date.now(),
     };
-    _lastDrawSource = null;
-    _lastDrawnCard = null;
 
     // Set animating flag BEFORE Firebase write to block listener re-renders
     _isAnimating = true;
 
-    await writeFullState(newState, lastMove);
+    await writeFullState(newState, discardLastMove);
 
     // Animate: card slides from hand to discard pile
     // Render with OLD discard pile during animation to prevent duplicate card
@@ -473,6 +478,8 @@ async function handleDiscard(handIndex) {
 
       playSound('throw');
 
+      _isAnimating = false;
+
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         const winner = state.players[state.winnerIndex];
@@ -508,11 +515,48 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   const newState = deserializeState(gameData, playersData);
 
-  // Detect opponent completed turn — animate draw then discard
-  if (lastMove && lastMove.playerIndex !== playerIndex && lastMove.discardedCard) {
-    const discardedCard = deserializeCard(lastMove.discardedCard);
+  // Detect opponent draw action — animate draw only
+  if (lastMove && lastMove.action === 'draw' && lastMove.playerIndex !== playerIndex) {
     const drawnFrom = lastMove.drawnFrom || 'drawPile';
-    // Render with OLD discard pile during animation to prevent duplicate
+    const oldDiscardPile = state ? [...state.discardPile] : [];
+    state = newState;
+
+    // Render with old discard pile if drawn from discard, so the card is still visible during animation
+    if (drawnFrom === 'discardPile' && oldDiscardPile.length > 0) {
+      const tempState = { ...state, discardPile: oldDiscardPile };
+      renderGameplayWithState(tempState);
+    } else {
+      renderUI();
+    }
+
+    _isAnimating = true;
+
+    const runDrawAnim = async () => {
+      const targetEl = document.querySelector(`#sr-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
+      const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
+
+      const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
+      if (drawPileRect && targetRect) {
+        playSound('throw');
+        const drawnCardData = lastMove.drawnCard ? deserializeCard(lastMove.drawnCard) : null;
+        const drawCardEl = (drawnFrom === 'discardPile' && drawnCardData)
+          ? renderCardFace(drawnCardData)
+          : renderCardBack();
+        await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
+      }
+
+      _isAnimating = false;
+      // Re-render with real state (discard pile updated after draw)
+      renderUI();
+    };
+
+    runDrawAnim();
+    return;
+  }
+
+  // Detect opponent discard action — animate discard only
+  if (lastMove && lastMove.action === 'discard' && lastMove.playerIndex !== playerIndex && lastMove.discardedCard) {
+    const discardedCard = deserializeCard(lastMove.discardedCard);
     const oldDiscardPile = state ? [...state.discardPile] : [];
     state = newState;
 
@@ -534,39 +578,15 @@ function handleRemoteUpdate(gameData, lastMove) {
       return;
     }
 
-    // Render with old discard pile so discarded card isn't shown yet
-    // If opponent drew from discard pile, show pile with top card still there initially
+    // Render with old discard pile during animation to prevent duplicate card
     const tempState = { ...state, discardPile: oldDiscardPile };
     renderGameplayWithState(tempState);
     _isAnimating = true;
 
-    const runRemoteAnim = async () => {
+    const runDiscardAnim = async () => {
       const targetEl = document.querySelector(`#sr-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
       const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
 
-      // Step 1: Animate draw — card from pile to opponent area
-      const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
-      if (drawPileRect && targetRect) {
-        playSound('throw');
-        // If drawn from discard pile, show the actual drawn card face-up flying away
-        const drawnCardData = lastMove.drawnCard ? deserializeCard(lastMove.drawnCard) : null;
-        const drawCardEl = (drawnFrom === 'discardPile' && drawnCardData)
-          ? renderCardFace(drawnCardData)
-          : renderCardBack();
-        await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
-      }
-
-      // After draw animation, if drawn from discard pile, re-render with the card removed
-      if (drawnFrom === 'discardPile' && oldDiscardPile.length > 0) {
-        const pileAfterDraw = oldDiscardPile.slice(0, -1);
-        const midState = { ...state, discardPile: pileAfterDraw };
-        renderGameplayWithState(midState);
-      }
-
-      // Pause between draw and discard
-      await new Promise((r) => setTimeout(r, 400));
-
-      // Step 2: Animate discard — card from opponent area to discard pile
       const discardRect = getPileRect('discard');
       if (targetRect && discardRect) {
         playSound('throw');
@@ -574,14 +594,81 @@ function handleRemoteUpdate(gameData, lastMove) {
         await animateCardMove(targetRect, discardRect, discardEl, 350);
       }
 
-      // Brief pause before re-rendering
       await new Promise((r) => setTimeout(r, 300));
 
       _isAnimating = false;
       renderUI();
     };
 
-    runRemoteAnim();
+    runDiscardAnim();
+    return;
+  }
+
+  // Fallback: old-style lastMove (combined draw+discard) for backward compatibility
+  if (lastMove && lastMove.playerIndex !== playerIndex && lastMove.discardedCard && !lastMove.action) {
+    const discardedCard = deserializeCard(lastMove.discardedCard);
+    const drawnFrom = lastMove.drawnFrom || 'drawPile';
+    const oldDiscardPile = state ? [...state.discardPile] : [];
+    state = newState;
+
+    if (state.status === 'finished') {
+      if (state.winnerIndex != null) {
+        const winner = state.players[state.winnerIndex];
+        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        announceWin(winner.name);
+        showWinReveal(winner, state.winGroups || [], 4000).then(() => {
+          renderResults(state);
+          showScreen('sr-results');
+          startReadyListener();
+        });
+      } else {
+        renderResults(state);
+        showScreen('sr-results');
+        startReadyListener();
+      }
+      return;
+    }
+
+    const tempState = { ...state, discardPile: oldDiscardPile };
+    renderGameplayWithState(tempState);
+    _isAnimating = true;
+
+    const runLegacyAnim = async () => {
+      const targetEl = document.querySelector(`#sr-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
+      const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
+
+      const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
+      if (drawPileRect && targetRect) {
+        playSound('throw');
+        const drawnCardData = lastMove.drawnCard ? deserializeCard(lastMove.drawnCard) : null;
+        const drawCardEl = (drawnFrom === 'discardPile' && drawnCardData)
+          ? renderCardFace(drawnCardData)
+          : renderCardBack();
+        await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
+      }
+
+      if (drawnFrom === 'discardPile' && oldDiscardPile.length > 0) {
+        const pileAfterDraw = oldDiscardPile.slice(0, -1);
+        const midState = { ...state, discardPile: pileAfterDraw };
+        renderGameplayWithState(midState);
+      }
+
+      await new Promise((r) => setTimeout(r, 400));
+
+      const discardRect = getPileRect('discard');
+      if (targetRect && discardRect) {
+        playSound('throw');
+        const discardEl = renderCardFace(discardedCard);
+        await animateCardMove(targetRect, discardRect, discardEl, 350);
+      }
+
+      await new Promise((r) => setTimeout(r, 300));
+
+      _isAnimating = false;
+      renderUI();
+    };
+
+    runLegacyAnim();
     return;
   }
 

@@ -195,10 +195,40 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
   const maxAngle = 30;
   const maxLift = 20;
 
+  // Dynamic card sizing: fit all cards within container width
+  const containerWidth = container.offsetWidth || 360;
+  const padding = 16;
+  const availableWidth = containerWidth - padding;
+
+  let cardW = 46;
+  let cardH = 64;
+  let overlap = -16;
+  if (n > 1) {
+    const neededWidth = cardW + (n - 1) * (cardW + overlap);
+    if (neededWidth > availableWidth) {
+      overlap = -((n * cardW - availableWidth) / (n - 1));
+      if (overlap < -30) {
+        cardW = 38; cardH = 54;
+        overlap = -((n * cardW - availableWidth) / (n - 1));
+      }
+      if (overlap < -28) {
+        cardW = 32; cardH = 45;
+        overlap = -((n * cardW - availableWidth) / (n - 1));
+      }
+    }
+  }
+
+  container.style.setProperty('--sr-card-w', `${cardW}px`);
+  container.style.setProperty('--sr-card-h', `${cardH}px`);
+
   hand.forEach((card, i) => {
     const cardEl = renderCardFace(card);
     cardEl.dataset.handIndex = String(i);
     cardEl.classList.add('sr-arc-card');
+
+    cardEl.style.width = `${cardW}px`;
+    cardEl.style.height = `${cardH}px`;
+    cardEl.style.marginLeft = i === 0 ? '0' : `${overlap}px`;
 
     const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
     const angle = t * (maxAngle / 2);

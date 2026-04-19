@@ -128,10 +128,46 @@ export function renderArcHand(container, hand, canDiscard, onCardTap, onReorder)
   const maxAngle = 30;
   const maxLift = 20;
 
+  // Dynamic card sizing: fit all cards within container width
+  const containerWidth = container.offsetWidth || 360;
+  const padding = 16; // left+right padding
+  const availableWidth = containerWidth - padding;
+
+  // Base card width, then shrink overlap to fit
+  let cardW = 46;
+  let cardH = 64;
+  // Calculate needed overlap: cardW + (n-1) * (cardW + overlap) = availableWidth
+  // overlap = (availableWidth - cardW) / (n - 1) - cardW  ... but we want negative overlap
+  let overlap = -16; // default
+  if (n > 1) {
+    const neededWidth = cardW + (n - 1) * (cardW + overlap);
+    if (neededWidth > availableWidth) {
+      // Shrink: calculate overlap to fit
+      overlap = -((n * cardW - availableWidth) / (n - 1));
+      // If overlap is too extreme (cards barely visible), shrink card size too
+      if (overlap < -30) {
+        cardW = 38; cardH = 54;
+        overlap = -((n * cardW - availableWidth) / (n - 1));
+      }
+      if (overlap < -28) {
+        cardW = 32; cardH = 45;
+        overlap = -((n * cardW - availableWidth) / (n - 1));
+      }
+    }
+  }
+
+  // Apply dynamic sizing via CSS custom properties
+  container.style.setProperty('--sr-card-w', `${cardW}px`);
+  container.style.setProperty('--sr-card-h', `${cardH}px`);
   hand.forEach((card, i) => {
     const cardEl = renderCardFace(card);
     cardEl.dataset.handIndex = String(i);
     cardEl.classList.add('sr-arc-card');
+
+    // Apply dynamic sizing
+    cardEl.style.width = `${cardW}px`;
+    cardEl.style.height = `${cardH}px`;
+    cardEl.style.marginLeft = i === 0 ? '0' : `${overlap}px`;
 
     const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
     const angle = t * (maxAngle / 2);
