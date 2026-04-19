@@ -10,10 +10,12 @@ import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 /* ======= CONSTANTS ======= */
 
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const CHALLENGE_WINDOW_MS = 5000;
 
 /* ======= SELECTION STATE ======= */
 
 let _selectedIndices = new Set();
+let _selectedForMove = null;
 
 /**
  * Returns currently selected card indices.
@@ -28,6 +30,7 @@ export function getSelectedIndices() {
  */
 export function clearSelection() {
   _selectedIndices = new Set();
+  _selectedForMove = null;
 }
 
 /* ======= GAMEPLAY RENDERING ======= */
@@ -36,7 +39,7 @@ export function clearSelection() {
  * Renders the full Bluff gameplay screen.
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
- * @param {object} callbacks - { onPlaceCards, onChallenge, onPass }
+ * @param {object} callbacks - { onPlaceCards, onChallenge, onPass, onReorder }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
   const allPlayersBar = document.getElementById('bl-all-players');
@@ -65,7 +68,8 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   if (handArea) {
     const isMyTurn = state.currentPlayerIndex === localPlayerIndex;
     const canSelect = isMyTurn && state.phase === 'placing';
-    renderHand(handArea, state.players[localPlayerIndex].hand, canSelect);
+    const inChallengeWindow = state.phase === 'challengeWindow';
+    renderHand(handArea, state.players[localPlayerIndex].hand, canSelect, inChallengeWindow, callbacks.onReorder);
   }
 
   // Actions area (place button + pass button)
@@ -93,7 +97,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
       // Pass button — only when a rank is already set (can't pass if you need to pick a rank)
       if (state.currentRank) {
         const passBtn = document.createElement('button');
-        passBtn.className = 'btn secondary bl-pass-btn';
+        passBtn.className = 'btn bl-pass-btn';
         passBtn.type = 'button';
         passBtn.textContent = '⏭ Pass';
         passBtn.addEventListener('click', () => {
@@ -216,14 +220,28 @@ function renderCenterPile(container, pileCount) {
 
 /**
  * Renders the local player's hand as an arc of tappable cards.
+ * Supports responsive sizing based on hand length and reorder when not in placing/challenge phase.
  */
-function renderHand(container, hand, canSelect) {
+function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
   container.innerHTML = '';
 
   const arc = document.createElement('div');
   arc.className = 'sr-arc bl-arc';
 
   const n = hand.length;
+
+  // Responsive card sizing based on hand count
+  let cardW = 46, cardH = 64, overlap = -16;
+  if (n > 20) {
+    cardW = 32; cardH = 45; overlap = -12;
+  } else if (n > 14) {
+    cardW = 38; cardH = 54; overlap = -14;
+  }
+
+  // Set CSS custom properties on the container
+  container.style.setProperty('--bl-card-w', `${cardW}px`);
+  container.style.setProperty('--bl-card-h', `${cardH}px`);
+
   const maxAngle = 30;
   const maxLift = 20;
 
@@ -232,17 +250,24 @@ function renderHand(container, hand, canSelect) {
     cardEl.dataset.handIndex = String(i);
     cardEl.classList.add('sr-arc-card', 'bl-hand-card');
 
+    // Apply responsive sizing
+    cardEl.style.width = `${cardW}px`;
+    cardEl.style.height = `${cardH}px`;
+    if (i > 0) cardEl.style.marginLeft = `${overlap}px`;
+    else cardEl.style.marginLeft = '0';
+
     const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
     const angle = t * (maxAngle / 2);
     const lift = (1 - t * t) * maxLift;
     let extraLift = 0;
 
-    if (_selectedIndices.has(i)) {
-      cardEl.classList.add('bl-card-selected');
-      extraLift = 18;
-    }
-
     if (canSelect) {
+      // Placing phase: multi-select for placement
+      if (_selectedIndices.has(i)) {
+        cardEl.classList.add('bl-card-selected');
+        extraLift = 18;
+      }
+
       cardEl.style.cursor = 'pointer';
       cardEl.addEventListener('click', () => {
         if (_selectedIndices.has(i)) {
@@ -251,7 +276,7 @@ function renderHand(container, hand, canSelect) {
           _selectedIndices.add(i);
         }
         // Re-render hand and actions
-        renderHand(container, hand, canSelect);
+        renderHand(container, hand, canSelect, inChallengeWindow, onReorder);
         // Update place button
         const actionsArea = document.getElementById('bl-actions-area');
         if (actionsArea) {
@@ -263,12 +288,31 @@ function renderHand(container, hand, canSelect) {
           }
         }
       });
+    } else if (!inChallengeWindow) {
+      // Not placing, not in challenge window: reorder mode
+      cardEl.style.cursor = 'pointer';
+
+      if (_selectedForMove === i) {
+        cardEl.classList.add('sr-card-selected');
+        extraLift = 18;
+      }
+
+      cardEl.addEventListener('click', () => {
+        if (_selectedForMove === null || _selectedForMove === i) {
+          _selectedForMove = _selectedForMove === i ? null : i;
+          renderHand(container, hand, canSelect, inChallengeWindow, onReorder);
+        } else {
+          const from = _selectedForMove;
+          _selectedForMove = null;
+          if (onReorder) onReorder(from, i);
+        }
+      });
     } else {
       cardEl.style.cursor = 'default';
     }
 
     cardEl.style.transform = `translateY(${-lift - extraLift}px) rotate(${angle}deg)`;
-    cardEl.style.zIndex = _selectedIndices.has(i) ? '20' : String(i);
+    cardEl.style.zIndex = (_selectedIndices.has(i) || _selectedForMove === i) ? '20' : String(i);
 
     arc.appendChild(cardEl);
   });
@@ -279,7 +323,8 @@ function renderHand(container, hand, canSelect) {
 /* ======= CHALLENGE WINDOW ======= */
 
 /**
- * Renders the challenge window UI with countdown timer and Bluff! button.
+ * Renders the simplified challenge window UI — announcement + large pulsing BLUFF button + countdown text.
+ * No timer bar.
  * @param {number} remainingMs — milliseconds remaining
  * @param {boolean} canChallenge — whether local player can challenge
  * @param {Function} onChallenge — callback when Bluff! is pressed
@@ -300,24 +345,7 @@ export function renderChallengeWindow(remainingMs, canChallenge, onChallenge, an
     challengeArea.appendChild(announcementEl);
   }
 
-  // Countdown bar
-  const timerContainer = document.createElement('div');
-  timerContainer.className = 'bl-timer-container';
-
-  const timerBar = document.createElement('div');
-  timerBar.className = 'bl-timer-bar';
-  const pct = Math.max(0, Math.min(100, (remainingMs / 10000) * 100));
-  timerBar.style.width = `${pct}%`;
-
-  const timerText = document.createElement('span');
-  timerText.className = 'bl-timer-text';
-  timerText.textContent = `${Math.ceil(remainingMs / 1000)}s`;
-
-  timerContainer.appendChild(timerBar);
-  timerContainer.appendChild(timerText);
-  challengeArea.appendChild(timerContainer);
-
-  // Bluff! button
+  // Bluff! button (large, pulsing)
   if (canChallenge) {
     const bluffBtn = document.createElement('button');
     bluffBtn.className = 'btn primary bl-bluff-btn';
@@ -333,6 +361,12 @@ export function renderChallengeWindow(remainingMs, canChallenge, onChallenge, an
     waitText.textContent = 'Waiting for challenges...';
     challengeArea.appendChild(waitText);
   }
+
+  // Countdown text
+  const countdownText = document.createElement('span');
+  countdownText.className = 'bl-countdown-text';
+  countdownText.textContent = `${Math.ceil(remainingMs / 1000)}s`;
+  challengeArea.appendChild(countdownText);
 }
 
 /**
@@ -344,6 +378,55 @@ export function hideChallengeWindow() {
     challengeArea.innerHTML = '';
     challengeArea.hidden = true;
   }
+}
+
+/* ======= PLACEMENT OVERLAY ======= */
+
+/**
+ * Shows a centered overlay announcing a placement: "3 × Q's" with player emoji.
+ * Large bold text, gold color, scale-in animation. Auto-dismisses after 1.5s.
+ * @param {number} count — number of cards placed
+ * @param {string} rank — declared rank
+ * @param {string} playerName — player name
+ * @param {string} playerEmoji — player emoji
+ * @returns {Promise<void>}
+ */
+export function showPlacementOverlay(count, rank, playerName, playerEmoji) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('bl-placement-overlay');
+    if (!overlay) { resolve(); return; }
+
+    overlay.innerHTML = '';
+    overlay.hidden = false;
+    overlay.classList.add('bl-placement-overlay-visible');
+
+    const content = document.createElement('div');
+    content.className = 'bl-placement-content';
+
+    const emojiEl = document.createElement('div');
+    emojiEl.className = 'bl-placement-emoji';
+    emojiEl.textContent = playerEmoji || '🃏';
+
+    const textEl = document.createElement('div');
+    textEl.className = 'bl-placement-text';
+    textEl.textContent = `${count} × ${rank}'s`;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'bl-placement-name';
+    nameEl.textContent = playerName;
+
+    content.appendChild(emojiEl);
+    content.appendChild(textEl);
+    content.appendChild(nameEl);
+    overlay.appendChild(content);
+
+    setTimeout(() => {
+      overlay.hidden = true;
+      overlay.classList.remove('bl-placement-overlay-visible');
+      overlay.innerHTML = '';
+      resolve();
+    }, 1500);
+  });
 }
 
 /* ======= RANK SELECTOR ======= */

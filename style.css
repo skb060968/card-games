@@ -1247,10 +1247,10 @@ body {
   max-width: 220px;
 }
 
-/* Hand area */
+/* Hand area — responsive card sizing via custom properties */
 .bl-hand-area {
-  --sr-card-w: 46px;
-  --sr-card-h: 64px;
+  --bl-card-w: 46px;
+  --bl-card-h: 64px;
 }
 
 .bl-hand-card.bl-card-selected {
@@ -1258,13 +1258,19 @@ body {
   z-index: 20 !important;
 }
 
-/* Challenge area */
+/* Reorder selection — blue glow (same as Rummy) */
+.bl-hand-card.sr-card-selected {
+  box-shadow: 0 4px 14px rgba(52,152,219,0.7);
+  z-index: 20 !important;
+}
+
+/* Challenge area — simplified: announcement + button + countdown text */
 .bl-challenge-area {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: var(--color-panel-bg);
   border-radius: 12px;
   width: 100%;
@@ -1281,38 +1287,19 @@ body {
   text-align: center;
 }
 
-/* Timer bar */
-.bl-timer-container {
-  width: 100%;
-  height: 24px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.bl-timer-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-error));
-  border-radius: 12px;
-  transition: width 0.3s linear;
-}
-
-.bl-timer-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 0.75rem;
+/* Countdown text (replaces timer bar) */
+.bl-countdown-text {
+  font-size: 1.1rem;
   font-weight: 800;
-  color: var(--color-text-light);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  color: rgba(255,255,255,0.6);
+  text-align: center;
 }
 
-/* Bluff button */
+/* Bluff button — large pulsing */
 .bl-bluff-btn {
-  max-width: 200px;
-  font-size: 1rem;
+  max-width: 240px;
+  font-size: 1.15rem;
+  padding: 14px 20px;
   animation: bl-pulse 1.5s ease-in-out infinite;
 }
 
@@ -1494,13 +1481,82 @@ body {
 }
 
 .bl-pass-btn {
-  max-width: 120px;
-  font-size: 0.9rem;
-  opacity: 0.85;
+  max-width: 140px;
+  font-size: 0.95rem;
+  padding: 11px 16px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #5a6a7a, #3d4d5c);
+  color: #fff;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 3px 0 #2c3a47, 0 4px 8px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
 }
 
 .bl-pass-btn:hover {
-  opacity: 1;
+  filter: brightness(1.08);
+}
+
+.bl-pass-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #2c3a47;
+}
+
+
+/* =========================================================
+   21b) BLUFF — PLACEMENT OVERLAY
+   ========================================================= */
+
+.bl-placement-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  pointer-events: none;
+  background: rgba(0,0,0,0.35);
+}
+
+.bl-placement-overlay[hidden] { display: none !important; }
+
+.bl-placement-overlay.bl-placement-overlay-visible {
+  pointer-events: auto;
+}
+
+.bl-placement-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: bl-placement-scale-in 0.3s ease-out;
+}
+
+@keyframes bl-placement-scale-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bl-placement-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.bl-placement-text {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--color-accent);
+  text-shadow: 0 3px 12px rgba(243,156,18,0.6), 0 1px 4px rgba(0,0,0,0.5);
+  letter-spacing: 2px;
+}
+
+.bl-placement-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
 

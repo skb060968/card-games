@@ -11,7 +11,7 @@ import { createDeck, shuffle, dealCards, serializeCard, deserializeCard } from '
 /* ======= CONSTANTS ======= */
 
 const VALID_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const CHALLENGE_WINDOW_MS = 10000; // 10 seconds
+const CHALLENGE_WINDOW_MS = 5000; // 5 seconds
 
 /* ======= GAME CREATION ======= */
 

@@ -3,6 +3,7 @@
  *
  * Handles all Bluff game flows: create/join room, lobby,
  * gameplay (place cards, challenge, timer), results, session persistence.
+ * Includes card animations, reorder support, and placement overlay.
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
@@ -29,6 +30,7 @@ import {
   setEventMessage,
   clearSelection,
   getSelectedIndices,
+  showPlacementOverlay,
 } from './ui.js';
 import {
   announceWin,
@@ -38,6 +40,7 @@ import {
   warmSpeech,
   playSound,
 } from '../../shared/voice-announcer.js';
+import { renderCardBack } from '../../shared/card-renderer.js';
 import {
   createRoom,
   joinRoom,
@@ -55,7 +58,7 @@ import { ref, get, update, remove, onValue, off } from 'firebase/database';
 /* ======= CONSTANTS ======= */
 const GAME_ID = 'bluff';
 const BL_SESSION_KEY = 'card_games_bluff_session';
-const CHALLENGE_WINDOW_MS = 10000;
+const CHALLENGE_WINDOW_MS = 5000;
 
 /* ======= STATE ======= */
 let state = null;
@@ -67,6 +70,7 @@ let unsubscribeRoom = null;
 let goHome = null;
 let _challengeTimer = null;
 let _challengeCountdownInterval = null;
+let _isAnimating = false;
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -169,6 +173,135 @@ function speak(text) {
     utterance.volume = 1.0;
     speechSynthesis.speak(utterance);
   } catch (_) {}
+}
+
+/* ======= CARD ANIMATIONS ======= */
+
+/**
+ * Animates a floating card from one rect to another.
+ * @param {DOMRect} fromRect
+ * @param {DOMRect} toRect
+ * @param {HTMLElement} cardEl - a full .card element
+ * @param {number} [duration=350]
+ * @returns {Promise<void>}
+ */
+function animateCardMove(fromRect, toRect, cardEl, duration = 350) {
+  return new Promise((resolve) => {
+    const floater = cardEl;
+    floater.style.position = 'fixed';
+    floater.style.left = `${fromRect.left}px`;
+    floater.style.top = `${fromRect.top}px`;
+    floater.style.zIndex = '200';
+    floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+    floater.style.pointerEvents = 'none';
+
+    document.body.appendChild(floater);
+
+    requestAnimationFrame(() => {
+      const cardW = floater.offsetWidth;
+      const cardH = floater.offsetHeight;
+      floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
+      floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
+    });
+
+    setTimeout(() => {
+      if (floater.parentNode) floater.parentNode.removeChild(floater);
+      resolve();
+    }, duration + 20);
+  });
+}
+
+/**
+ * Gets the bounding rect of the center pile.
+ * @returns {DOMRect|null}
+ */
+function getPileRect() {
+  const el = document.getElementById('bl-pile-card-inner');
+  return el ? el.getBoundingClientRect() : null;
+}
+
+/**
+ * Gets the bounding rect of a specific card in the local hand.
+ * @param {number} index
+ * @returns {DOMRect|null}
+ */
+function getHandCardRect(index) {
+  const card = document.querySelector(`#bl-hand-area .bl-hand-card[data-hand-index="${index}"]`);
+  return card ? card.getBoundingClientRect() : null;
+}
+
+/**
+ * Gets the bounding rect of an opponent's player block.
+ * @param {number} pIdx
+ * @returns {DOMRect|null}
+ */
+function getPlayerBlockRect(pIdx) {
+  const block = document.querySelector(`#bl-all-players .game-player-block[data-player-index="${pIdx}"]`);
+  return block ? block.getBoundingClientRect() : null;
+}
+
+/**
+ * Animate cards flying from hand positions to center pile (face-down).
+ * @param {number[]} cardIndices
+ * @returns {Promise<void>}
+ */
+async function animatePlacementToPile(cardIndices) {
+  const pileRect = getPileRect();
+  if (!pileRect) return;
+
+  const promises = cardIndices.map((idx, i) => {
+    const fromRect = getHandCardRect(idx);
+    if (!fromRect) return Promise.resolve();
+    const back = renderCardBack();
+    back.style.width = '46px';
+    back.style.height = '64px';
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        animateCardMove(fromRect, pileRect, back, 300).then(resolve);
+      }, i * 80);
+    });
+  });
+
+  await Promise.all(promises);
+}
+
+/**
+ * Animate a card-back from an opponent block to the center pile (remote placement).
+ * @param {number} opponentIndex
+ * @returns {Promise<void>}
+ */
+async function animateRemotePlacement(opponentIndex) {
+  const fromRect = getPlayerBlockRect(opponentIndex);
+  const toRect = getPileRect();
+  if (!fromRect || !toRect) return;
+
+  const back = renderCardBack();
+  back.style.width = '46px';
+  back.style.height = '64px';
+  await animateCardMove(fromRect, toRect, back, 300);
+}
+
+/**
+ * Animate pile sweep toward the loser's block (challenge loss).
+ * @param {number} loserIndex
+ * @returns {Promise<void>}
+ */
+async function animatePileSweep(loserIndex) {
+  const fromRect = getPileRect();
+  let toRect;
+  if (loserIndex === playerIndex) {
+    // Sweep to self bar
+    const selfBar = document.getElementById('bl-self-bar');
+    toRect = selfBar ? selfBar.getBoundingClientRect() : null;
+  } else {
+    toRect = getPlayerBlockRect(loserIndex);
+  }
+  if (!fromRect || !toRect) return;
+
+  const back = renderCardBack();
+  back.style.width = '46px';
+  back.style.height = '64px';
+  await animateCardMove(fromRect, toRect, back, 400);
 }
 
 /* ======= FIREBASE WRITE ======= */
@@ -345,7 +478,23 @@ function renderUI() {
     onPlaceCards: (indices) => handlePlacement(indices),
     onChallenge: () => handleChallenge(),
     onPass: () => handlePass(),
+    onReorder: (from, to) => handleReorder(from, to),
   });
+}
+
+/* ======= REORDER ======= */
+
+function handleReorder(fromIndex, toIndex) {
+  if (!state || playerIndex == null) return;
+  const hand = [...state.players[playerIndex].hand];
+  const [card] = hand.splice(fromIndex, 1);
+  hand.splice(toIndex, 0, card);
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+  renderUI();
 }
 
 /* ======= PLACEMENT ======= */
@@ -353,12 +502,16 @@ function renderUI() {
 async function handlePlacement(cardIndices) {
   if (!state || state.phase !== 'placing') return;
   if (state.currentPlayerIndex !== playerIndex) return;
+  if (_isAnimating) return;
 
   warmSpeech();
 
   // If a rank is already set for this round, place directly with that rank
   if (state.currentRank) {
     try {
+      // Capture card rects before state change for animation
+      const cardRects = cardIndices.map((idx) => getHandCardRect(idx));
+
       const newState = placeCards(state, cardIndices, state.currentRank);
 
       const validation = validateState(newState);
@@ -373,6 +526,12 @@ async function handlePlacement(cardIndices) {
       playSound('throw');
 
       const lp = state.lastPlacement;
+
+      // Animate cards flying to pile (face-down)
+      _isAnimating = true;
+      await animatePlacementToPile(cardIndices);
+      _isAnimating = false;
+
       const lastMove = {
         playerIndex,
         action: 'place',
@@ -385,8 +544,13 @@ async function handlePlacement(cardIndices) {
 
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
+
+      // Show placement overlay then start challenge countdown
+      const placer = state.players[playerIndex];
+      await showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji);
       startChallengeCountdown();
     } catch (err) {
+      _isAnimating = false;
       console.error('Placement failed:', err);
       showToast(err.message || 'Placement failed');
     }
@@ -410,6 +574,12 @@ async function handlePlacement(cardIndices) {
       playSound('throw');
 
       const lp = state.lastPlacement;
+
+      // Animate cards flying to pile (face-down)
+      _isAnimating = true;
+      await animatePlacementToPile(cardIndices);
+      _isAnimating = false;
+
       const lastMove = {
         playerIndex,
         action: 'place',
@@ -422,8 +592,13 @@ async function handlePlacement(cardIndices) {
 
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
+
+      // Show placement overlay then start challenge countdown
+      const placer = state.players[playerIndex];
+      await showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji);
       startChallengeCountdown();
     } catch (err) {
+      _isAnimating = false;
       console.error('Placement failed:', err);
       showToast(err.message || 'Placement failed');
     }
@@ -500,6 +675,10 @@ async function handleChallenge() {
 
     // Show result overlay
     await renderChallengeResult(revealedCards, state.lastPlacement ? state.lastPlacement.declaredRank : '', bluffCaught, loserName);
+
+    // Animate pile sweep to loser
+    playSound('capture');
+    await animatePileSweep(loserIndex);
 
     // Announce outcome
     if (bluffCaught) {
@@ -585,13 +764,18 @@ function handleRemoteUpdate(gameData, lastMove) {
     const revealedCards = oldLastPlacement ? oldLastPlacement.actualCards : [];
     const declaredRank = oldLastPlacement ? oldLastPlacement.declaredRank : '';
     const bluffCaught = lastMove.bluffCaught;
-    const loserName = state && lastMove.loserIndex != null ? state.players[lastMove.loserIndex]?.name || 'Player' : 'Player';
+    const loserIndex = lastMove.loserIndex;
+    const loserName = state && loserIndex != null ? state.players[loserIndex]?.name || 'Player' : 'Player';
 
     state = newState;
 
     speak('Bluff called!');
 
-    renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName).then(() => {
+    renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName).then(async () => {
+      // Animate pile sweep to loser
+      playSound('capture');
+      await animatePileSweep(loserIndex);
+
       if (bluffCaught) {
         speak(`${loserName} caught bluffing!`);
         setEventMessage(`🚨 ${loserName} caught bluffing! Takes the pile.`);
@@ -627,18 +811,35 @@ function handleRemoteUpdate(gameData, lastMove) {
     state = newState;
     clearSelection();
     playSound('throw');
-    renderUI();
 
-    // Small delay before starting challenge countdown for remote animations
-    setTimeout(() => {
-      // Start challenge countdown for this client
-      if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-        const remaining = state.challengeDeadline - Date.now();
-        if (remaining > 0) {
-          startChallengeCountdown();
+    // Animate remote placement: card-back from opponent block to pile
+    const opponentIdx = lastMove.playerIndex;
+    animateRemotePlacement(opponentIdx).then(() => {
+      renderUI();
+
+      // Show placement overlay for remote player
+      const placer = state.players[opponentIdx];
+      const lp = state.lastPlacement;
+      if (lp && placer) {
+        showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji).then(() => {
+          // Start challenge countdown for this client
+          if (state.phase === 'challengeWindow' && state.challengeDeadline) {
+            const remaining = state.challengeDeadline - Date.now();
+            if (remaining > 0) {
+              startChallengeCountdown();
+            }
+          }
+        });
+      } else {
+        // Fallback: start challenge countdown directly
+        if (state.phase === 'challengeWindow' && state.challengeDeadline) {
+          const remaining = state.challengeDeadline - Date.now();
+          if (remaining > 0) {
+            startChallengeCountdown();
+          }
         }
       }
-    }, 300);
+    });
     return;
   }
 
