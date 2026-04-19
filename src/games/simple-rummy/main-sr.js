@@ -61,6 +61,7 @@ let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
 let _lastDrawSource = null; // track draw source for lastMove
+let _lastDrawnCard = null; // track drawn card for remote animation
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -368,6 +369,7 @@ async function handleDraw(source) {
     }
     state = newState;
     _lastDrawSource = source;
+    _lastDrawnCard = oldDiscardTop; // save for lastMove (null if from draw pile)
 
     // Move drawn card (last in hand) to the middle for better arc visibility
     const hand = [...state.players[playerIndex].hand];
@@ -424,9 +426,11 @@ async function handleDiscard(handIndex) {
       playerIndex,
       discardedCard: serializeCard(discardedCard),
       drawnFrom: _lastDrawSource || 'drawPile',
+      drawnCard: _lastDrawnCard ? serializeCard(_lastDrawnCard) : null,
       timestamp: Date.now(),
     };
     _lastDrawSource = null;
+    _lastDrawnCard = null;
 
     // Set animating flag BEFORE Firebase write to block listener re-renders
     _isAnimating = true;
@@ -531,12 +535,12 @@ function handleRemoteUpdate(gameData, lastMove) {
     }
 
     // Render with old discard pile so discarded card isn't shown yet
+    // If opponent drew from discard pile, show pile with top card still there initially
     const tempState = { ...state, discardPile: oldDiscardPile };
     renderGameplayWithState(tempState);
     _isAnimating = true;
 
     const runRemoteAnim = async () => {
-      // Get animation target — the opponent's player block in the all-players bar
       const targetEl = document.querySelector(`#sr-all-players .game-player-block[data-player-index="${lastMove.playerIndex}"]`);
       const targetRect = targetEl ? targetEl.getBoundingClientRect() : null;
 
@@ -544,11 +548,22 @@ function handleRemoteUpdate(gameData, lastMove) {
       const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
       if (drawPileRect && targetRect) {
         playSound('throw');
-        const drawCardEl = renderCardBack();
+        // If drawn from discard pile, show the actual drawn card face-up flying away
+        const drawnCardData = lastMove.drawnCard ? deserializeCard(lastMove.drawnCard) : null;
+        const drawCardEl = (drawnFrom === 'discardPile' && drawnCardData)
+          ? renderCardFace(drawnCardData)
+          : renderCardBack();
         await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
       }
 
-      // Pause between draw and discard so viewer can see each step
+      // After draw animation, if drawn from discard pile, re-render with the card removed
+      if (drawnFrom === 'discardPile' && oldDiscardPile.length > 0) {
+        const pileAfterDraw = oldDiscardPile.slice(0, -1);
+        const midState = { ...state, discardPile: pileAfterDraw };
+        renderGameplayWithState(midState);
+      }
+
+      // Pause between draw and discard
       await new Promise((r) => setTimeout(r, 400));
 
       // Step 2: Animate discard — card from opponent area to discard pile

@@ -59,6 +59,7 @@ let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
 let _lastDrawSource = null;
+let _lastDrawnCard = null;
 let _isAnimating = false;
 
 /* ======= SESSION ======= */
@@ -342,6 +343,7 @@ async function handleDraw(source) {
     }
     state = newState;
     _lastDrawSource = source;
+    _lastDrawnCard = oldDiscardTop;
 
     // Move drawn card to middle of hand for better visibility
     const hand = [...state.players[playerIndex].hand];
@@ -396,9 +398,11 @@ async function handleDiscard(handIndex) {
       playerIndex,
       discardedCard: serializeCard(discardedCard),
       drawnFrom: _lastDrawSource || 'drawPile',
+      drawnCard: _lastDrawnCard ? serializeCard(_lastDrawnCard) : null,
       timestamp: Date.now(),
     };
     _lastDrawSource = null;
+    _lastDrawnCard = null;
 
     // Set animating flag BEFORE Firebase write to block listener re-renders
     _isAnimating = true;
@@ -510,11 +514,22 @@ function handleRemoteUpdate(gameData, lastMove) {
       const drawPileRect = getPileRect(drawnFrom === 'discardPile' ? 'discard' : 'draw');
       if (drawPileRect && targetRect) {
         playSound('throw');
-        const drawCardEl = renderCardBack();
+        // If drawn from discard pile, show the actual drawn card face-up flying away
+        const drawnCardData = lastMove.drawnCard ? deserializeCard(lastMove.drawnCard) : null;
+        const drawCardEl = (drawnFrom === 'discardPile' && drawnCardData)
+          ? renderCardFace(drawnCardData)
+          : renderCardBack();
         await animateCardMove(drawPileRect, targetRect, drawCardEl, 300);
       }
 
-      // Pause between draw and discard so viewer can see each step
+      // After draw animation, if drawn from discard pile, re-render with the card removed
+      if (drawnFrom === 'discardPile' && oldDiscardPile.length > 0) {
+        const pileAfterDraw = oldDiscardPile.slice(0, -1);
+        const midState = { ...state, discardPile: pileAfterDraw };
+        renderGameplayWithState(midState);
+      }
+
+      // Pause between draw and discard
       await new Promise((r) => setTimeout(r, 400));
 
       // Step 2: Animate discard
