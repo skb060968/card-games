@@ -113,7 +113,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
 
 /**
  * Renders all player blocks at the top (opponents only).
- * Each block: emoji + name + face-down card strip (showing card count).
+ * Each block: emoji + name + compact heap icon + card count badge.
  * Active turn gets gold glow. Skips self.
  */
 function renderAllPlayers(container, state, localPlayerIndex) {
@@ -135,18 +135,37 @@ function renderAllPlayers(container, state, localPlayerIndex) {
     name.className = 'game-block-name';
     name.textContent = player.name;
 
-    const strip = document.createElement('div');
-    strip.className = 'game-card-strip';
     const count = player.hand ? player.hand.length : 0;
-    for (let c = 0; c < count; c++) {
-      const miniCard = document.createElement('div');
-      miniCard.className = 'game-strip-card';
-      strip.appendChild(miniCard);
+
+    // Compact heap: 3 overlapping mini card-backs with random offset
+    const heapWrap = document.createElement('div');
+    heapWrap.className = 'bl-heap-wrap';
+
+    const heap = document.createElement('div');
+    heap.className = 'bl-heap';
+    const offsets = [
+      { x: 0, y: 0, r: -4 },
+      { x: 3, y: -2, r: 2 },
+      { x: 6, y: -1, r: 5 },
+    ];
+    for (let c = 0; c < 3; c++) {
+      const mini = document.createElement('div');
+      mini.className = 'bl-heap-card';
+      const o = offsets[c];
+      mini.style.transform = `translate(${o.x}px, ${o.y}px) rotate(${o.r}deg)`;
+      mini.style.zIndex = String(c);
+      heap.appendChild(mini);
     }
+    heapWrap.appendChild(heap);
+
+    const badge = document.createElement('span');
+    badge.className = 'bl-heap-badge';
+    badge.textContent = String(count);
+    heapWrap.appendChild(badge);
 
     block.appendChild(emoji);
     block.appendChild(name);
-    block.appendChild(strip);
+    block.appendChild(heapWrap);
     container.appendChild(block);
   });
 }
@@ -219,53 +238,38 @@ function renderCenterPile(container, pileCount) {
 }
 
 /**
- * Renders the local player's hand as an arc of tappable cards.
- * Supports responsive sizing based on hand length and reorder when not in placing/challenge phase.
+ * Renders the local player's hand as a multi-row grid (10 columns).
+ * Cards slightly overlap horizontally. Supports multi-select for placement
+ * and tap-to-reorder when not in placing/challenge phase.
  */
 function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
   container.innerHTML = '';
 
-  const arc = document.createElement('div');
-  arc.className = 'sr-arc bl-arc';
+  const grid = document.createElement('div');
+  grid.className = 'bl-hand-grid';
 
   const n = hand.length;
 
   // Responsive card sizing based on hand count
-  let cardW = 46, cardH = 64, overlap = -16;
-  if (n > 20) {
-    cardW = 32; cardH = 45; overlap = -12;
-  } else if (n > 14) {
-    cardW = 38; cardH = 54; overlap = -14;
+  let cardW = 38, cardH = 54;
+  if (n <= 10) {
+    cardW = 42; cardH = 59;
+  } else if (n > 26) {
+    cardW = 34; cardH = 48;
   }
 
-  // Set CSS custom properties on the container
-  container.style.setProperty('--bl-card-w', `${cardW}px`);
-  container.style.setProperty('--bl-card-h', `${cardH}px`);
-
-  const maxAngle = 30;
-  const maxLift = 20;
+  grid.style.setProperty('--bl-grid-card-w', `${cardW}px`);
+  grid.style.setProperty('--bl-grid-card-h', `${cardH}px`);
 
   hand.forEach((card, i) => {
     const cardEl = renderCardFace(card);
     cardEl.dataset.handIndex = String(i);
-    cardEl.classList.add('sr-arc-card', 'bl-hand-card');
-
-    // Apply responsive sizing
-    cardEl.style.width = `${cardW}px`;
-    cardEl.style.height = `${cardH}px`;
-    if (i > 0) cardEl.style.marginLeft = `${overlap}px`;
-    else cardEl.style.marginLeft = '0';
-
-    const t = n > 1 ? (i / (n - 1)) * 2 - 1 : 0;
-    const angle = t * (maxAngle / 2);
-    const lift = (1 - t * t) * maxLift;
-    let extraLift = 0;
+    cardEl.classList.add('bl-hand-card');
 
     if (canSelect) {
       // Placing phase: multi-select for placement
       if (_selectedIndices.has(i)) {
         cardEl.classList.add('bl-card-selected');
-        extraLift = 18;
       }
 
       cardEl.style.cursor = 'pointer';
@@ -294,7 +298,6 @@ function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
 
       if (_selectedForMove === i) {
         cardEl.classList.add('sr-card-selected');
-        extraLift = 18;
       }
 
       cardEl.addEventListener('click', () => {
@@ -311,24 +314,21 @@ function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
       cardEl.style.cursor = 'default';
     }
 
-    cardEl.style.transform = `translateY(${-lift - extraLift}px) rotate(${angle}deg)`;
-    cardEl.style.zIndex = (_selectedIndices.has(i) || _selectedForMove === i) ? '20' : String(i);
-
-    arc.appendChild(cardEl);
+    grid.appendChild(cardEl);
   });
 
-  container.appendChild(arc);
+  container.appendChild(grid);
 }
 
 /* ======= CHALLENGE WINDOW ======= */
 
 /**
- * Renders the simplified challenge window UI — announcement + large pulsing BLUFF button + countdown text.
- * No timer bar.
+ * Renders the merged challenge window UI — prominent placement announcement + BLUFF button (or waiting) + countdown.
+ * This replaces both the old placement overlay and the old challenge area.
  * @param {number} remainingMs — milliseconds remaining
  * @param {boolean} canChallenge — whether local player can challenge
  * @param {Function} onChallenge — callback when Bluff! is pressed
- * @param {string} announcement — text like "Player placed 2 Kings"
+ * @param {string} announcement — text like "🧙 Player placed 2 Kings"
  */
 export function renderChallengeWindow(remainingMs, canChallenge, onChallenge, announcement) {
   const challengeArea = document.getElementById('bl-challenge-area');
@@ -337,15 +337,15 @@ export function renderChallengeWindow(remainingMs, canChallenge, onChallenge, an
   challengeArea.innerHTML = '';
   challengeArea.hidden = false;
 
-  // Announcement
+  // Prominent placement announcement (gold, large)
   if (announcement) {
     const announcementEl = document.createElement('p');
-    announcementEl.className = 'bl-challenge-announcement';
+    announcementEl.className = 'bl-challenge-announcement bl-challenge-announcement-prominent';
     announcementEl.textContent = announcement;
     challengeArea.appendChild(announcementEl);
   }
 
-  // Bluff! button (large, pulsing)
+  // Bluff! button (large, pulsing) or waiting text
   if (canChallenge) {
     const bluffBtn = document.createElement('button');
     bluffBtn.className = 'btn primary bl-bluff-btn';
@@ -378,55 +378,6 @@ export function hideChallengeWindow() {
     challengeArea.innerHTML = '';
     challengeArea.hidden = true;
   }
-}
-
-/* ======= PLACEMENT OVERLAY ======= */
-
-/**
- * Shows a centered overlay announcing a placement: "3 × Q's" with player emoji.
- * Large bold text, gold color, scale-in animation. Auto-dismisses after 1.5s.
- * @param {number} count — number of cards placed
- * @param {string} rank — declared rank
- * @param {string} playerName — player name
- * @param {string} playerEmoji — player emoji
- * @returns {Promise<void>}
- */
-export function showPlacementOverlay(count, rank, playerName, playerEmoji) {
-  return new Promise((resolve) => {
-    const overlay = document.getElementById('bl-placement-overlay');
-    if (!overlay) { resolve(); return; }
-
-    overlay.innerHTML = '';
-    overlay.hidden = false;
-    overlay.classList.add('bl-placement-overlay-visible');
-
-    const content = document.createElement('div');
-    content.className = 'bl-placement-content';
-
-    const emojiEl = document.createElement('div');
-    emojiEl.className = 'bl-placement-emoji';
-    emojiEl.textContent = playerEmoji || '🃏';
-
-    const textEl = document.createElement('div');
-    textEl.className = 'bl-placement-text';
-    textEl.textContent = `${count} × ${rank}'s`;
-
-    const nameEl = document.createElement('div');
-    nameEl.className = 'bl-placement-name';
-    nameEl.textContent = playerName;
-
-    content.appendChild(emojiEl);
-    content.appendChild(textEl);
-    content.appendChild(nameEl);
-    overlay.appendChild(content);
-
-    setTimeout(() => {
-      overlay.hidden = true;
-      overlay.classList.remove('bl-placement-overlay-visible');
-      overlay.innerHTML = '';
-      resolve();
-    }, 1500);
-  });
 }
 
 /* ======= RANK SELECTOR ======= */

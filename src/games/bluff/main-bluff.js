@@ -30,7 +30,6 @@ import {
   setEventMessage,
   clearSelection,
   getSelectedIndices,
-  showPlacementOverlay,
 } from './ui.js';
 import {
   announceWin,
@@ -545,9 +544,7 @@ async function handlePlacement(cardIndices) {
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
 
-      // Show placement overlay then start challenge countdown
-      const placer = state.players[playerIndex];
-      await showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji);
+      // Start merged challenge countdown (includes announcement)
       startChallengeCountdown();
     } catch (err) {
       _isAnimating = false;
@@ -593,9 +590,7 @@ async function handlePlacement(cardIndices) {
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
 
-      // Show placement overlay then start challenge countdown
-      const placer = state.players[playerIndex];
-      await showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji);
+      // Start merged challenge countdown (includes announcement)
       startChallengeCountdown();
     } catch (err) {
       _isAnimating = false;
@@ -817,26 +812,11 @@ function handleRemoteUpdate(gameData, lastMove) {
     animateRemotePlacement(opponentIdx).then(() => {
       renderUI();
 
-      // Show placement overlay for remote player
-      const placer = state.players[opponentIdx];
-      const lp = state.lastPlacement;
-      if (lp && placer) {
-        showPlacementOverlay(lp.count, lp.declaredRank, placer.name, placer.emoji).then(() => {
-          // Start challenge countdown for this client
-          if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-            const remaining = state.challengeDeadline - Date.now();
-            if (remaining > 0) {
-              startChallengeCountdown();
-            }
-          }
-        });
-      } else {
-        // Fallback: start challenge countdown directly
-        if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-          const remaining = state.challengeDeadline - Date.now();
-          if (remaining > 0) {
-            startChallengeCountdown();
-          }
+      // Start challenge countdown directly (merged UI includes announcement)
+      if (state.phase === 'challengeWindow' && state.challengeDeadline) {
+        const remaining = state.challengeDeadline - Date.now();
+        if (remaining > 0) {
+          startChallengeCountdown();
         }
       }
     });

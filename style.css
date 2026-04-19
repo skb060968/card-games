@@ -1247,20 +1247,54 @@ body {
   max-width: 220px;
 }
 
-/* Hand area — responsive card sizing via custom properties */
+/* Hand area — grid layout for large hands */
 .bl-hand-area {
-  --bl-card-w: 46px;
-  --bl-card-h: 64px;
+  --bl-grid-card-w: 38px;
+  --bl-grid-card-h: 54px;
+}
+
+/* Multi-row grid: 10 columns, slight horizontal overlap */
+.bl-hand-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 4px 0;
+}
+
+.bl-hand-grid .bl-hand-card {
+  width: var(--bl-grid-card-w);
+  height: var(--bl-grid-card-h);
+  margin: 2px -4px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.bl-hand-grid .bl-hand-card .card-face {
+  font-size: 0.55rem;
+}
+
+.bl-hand-grid .bl-hand-card .card-face .rank-top,
+.bl-hand-grid .bl-hand-card .card-face .rank-bottom {
+  font-size: 0.5rem;
+}
+
+.bl-hand-grid .bl-hand-card .card-face .suit-center {
+  font-size: 0.9rem;
 }
 
 .bl-hand-card.bl-card-selected {
   box-shadow: 0 4px 14px rgba(243,156,18,0.8);
+  transform: translateY(-8px);
   z-index: 20 !important;
 }
 
 /* Reorder selection — blue glow (same as Rummy) */
 .bl-hand-card.sr-card-selected {
   box-shadow: 0 4px 14px rgba(52,152,219,0.7);
+  transform: translateY(-8px);
   z-index: 20 !important;
 }
 
@@ -1285,6 +1319,16 @@ body {
   font-weight: 700;
   color: var(--color-accent);
   text-align: center;
+}
+
+/* Prominent announcement in merged challenge area */
+.bl-challenge-announcement.bl-challenge-announcement-prominent {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-accent);
+  text-shadow: 0 2px 8px rgba(243,156,18,0.5), 0 1px 3px rgba(0,0,0,0.4);
+  letter-spacing: 0.5px;
+  padding: 4px 0;
 }
 
 /* Countdown text (replaces timer bar) */
@@ -1503,62 +1547,53 @@ body {
   box-shadow: 0 1px 0 #2c3a47;
 }
 
-
 /* =========================================================
-   21b) BLUFF — PLACEMENT OVERLAY
+   21b) BLUFF — OPPONENT HEAP DISPLAY
    ========================================================= */
 
-.bl-placement-overlay {
-  position: fixed;
-  inset: 0;
+.bl-heap-wrap {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1050;
-  pointer-events: none;
-  background: rgba(0,0,0,0.35);
+  gap: 4px;
 }
 
-.bl-placement-overlay[hidden] { display: none !important; }
-
-.bl-placement-overlay.bl-placement-overlay-visible {
-  pointer-events: auto;
+.bl-heap {
+  position: relative;
+  width: 30px;
+  height: 42px;
 }
 
-.bl-placement-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  animation: bl-placement-scale-in 0.3s ease-out;
+.bl-heap-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 28px;
+  border-radius: 3px;
+  border: 1.5px solid #f5e6c8;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.06) 2px,
+      rgba(255,255,255,0.06) 3px
+    ),
+    radial-gradient(ellipse at center, #8b1a2b 0%, #4a0e1a 100%);
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
-@keyframes bl-placement-scale-in {
-  0% { transform: scale(0.5); opacity: 0; }
-  60% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+.bl-heap-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: var(--color-accent);
+  color: #1a1a1a;
+  border-radius: 8px;
+  padding: 1px 5px;
+  line-height: 1.3;
+  min-width: 18px;
+  text-align: center;
 }
-
-.bl-placement-emoji {
-  font-size: 2.5rem;
-  line-height: 1;
-}
-
-.bl-placement-text {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--color-accent);
-  text-shadow: 0 3px 12px rgba(243,156,18,0.6), 0 1px 4px rgba(0,0,0,0.5);
-  letter-spacing: 2px;
-}
-
-.bl-placement-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.85);
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-}
-
 
 /* =========================================================
    22) FLIP & MATCH — GAMEPLAY STYLES
