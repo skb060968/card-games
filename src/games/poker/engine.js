@@ -221,7 +221,7 @@ function nextActivePlayer(state) {
 /**
  * Checks if the Show option should be available.
  * Show is available when all active players have acted at least once
- * and all active player bets are equal.
+ * AND all active player bets are equal.
  * @param {object} state
  * @returns {boolean}
  */
@@ -235,6 +235,16 @@ function checkShowEligible(state) {
   const bets = activePlayers.map((i) => state.players[i].currentBet);
   const allEqual = bets.every((b) => b === bets[0]);
   return allEqual;
+}
+
+/**
+ * Checks if all active players have acted at least once (round 1 complete).
+ * @param {object} state
+ * @returns {boolean}
+ */
+function allActivePlayersHaveActed(state) {
+  const activePlayers = getActivePlayers(state);
+  return activePlayers.every((i) => state.players[i].hasActed);
 }
 
 /**
@@ -265,6 +275,12 @@ export function performAction(state, playerIndex, action) {
 
   switch (action.type) {
     case 'bet': {
+      // Bet is only valid when no one has bet yet (all currentBets are 0)
+      const activePlayers = getActivePlayers(state);
+      const maxBet = Math.max(...activePlayers.map((i) => state.players[i].currentBet));
+      if (maxBet > 0) {
+        throw new Error('Cannot bet — someone has already bet. Use call or raise instead.');
+      }
       if (player.chips < BET_AMOUNT) {
         throw new Error(`Insufficient chips for bet. Have ${player.chips}, need ${BET_AMOUNT}`);
       }
@@ -276,12 +292,17 @@ export function performAction(state, playerIndex, action) {
     }
 
     case 'raise': {
-      if (player.chips < RAISE_AMOUNT) {
-        throw new Error(`Insufficient chips for raise. Have ${player.chips}, need ${RAISE_AMOUNT}`);
+      // Raise = call first (match max bet), then add 10 more
+      const activePlayers = getActivePlayers(state);
+      const maxBet = Math.max(...activePlayers.map((i) => state.players[i].currentBet));
+      const callAmount = maxBet - player.currentBet;
+      const totalCost = callAmount + BET_AMOUNT;
+      if (player.chips < totalCost) {
+        throw new Error(`Insufficient chips for raise. Have ${player.chips}, need ${totalCost}`);
       }
-      newPlayers[playerIndex].chips -= RAISE_AMOUNT;
-      newPlayers[playerIndex].currentBet += RAISE_AMOUNT;
-      newPot += RAISE_AMOUNT;
+      newPlayers[playerIndex].chips -= totalCost;
+      newPlayers[playerIndex].currentBet += totalCost;
+      newPot += totalCost;
       newPlayers[playerIndex].hasActed = true;
       break;
     }
@@ -304,6 +325,10 @@ export function performAction(state, playerIndex, action) {
     }
 
     case 'fold': {
+      // Fold is only valid after all active players have acted once (round 1 complete)
+      if (!allActivePlayersHaveActed(state)) {
+        throw new Error('Cannot fold in the first round');
+      }
       newPlayers[playerIndex].folded = true;
       newPlayers[playerIndex].hasActed = true;
 

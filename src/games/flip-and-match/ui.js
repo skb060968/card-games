@@ -10,6 +10,7 @@
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
+import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
 
 /* ======= CONSTANTS ======= */
 
@@ -371,13 +372,16 @@ export function renderResults(state) {
       nameEl.className = 'winner-name';
       nameEl.textContent = `${winner.name} wins!`;
 
-      const countEl = document.createElement('div');
-      countEl.className = 'winner-bounty';
-      countEl.textContent = `${winner.collected.length} cards collected`;
-
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
-      display.appendChild(countEl);
+
+      const pot = calculatePot('flip-and-match', state);
+      if (pot > 0) {
+        const potEl = document.createElement('div');
+        potEl.className = 'winner-pot';
+        potEl.textContent = `🪙 ${pot}`;
+        display.appendChild(potEl);
+      }
     } else {
       const drawEl = document.createElement('div');
       drawEl.className = 'winner-name';
@@ -400,7 +404,7 @@ export function renderResults(state) {
       nameSpan.textContent = `${player.emoji} ${player.name}`;
       const countSpan = document.createElement('span');
       countSpan.className = 'bounty-value';
-      countSpan.textContent = `🃏 ${player.collected.length} cards`;
+      countSpan.textContent = getPlayerMetric('flip-and-match', state, player.index);
       li.appendChild(nameSpan);
       li.appendChild(countSpan);
       resultsList.appendChild(li);

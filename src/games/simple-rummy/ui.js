@@ -6,6 +6,7 @@
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
+import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
 
 /* ======= GAMEPLAY RENDERING ======= */
 
@@ -414,6 +415,14 @@ export function renderResults(state) {
     display.innerHTML = '';
     if (state.winnerIndex != null && state.winGroups) {
       renderWinDisplay(state.winGroups, state.players[state.winnerIndex]);
+
+      const pot = calculatePot('simple-rummy', state);
+      if (pot > 0) {
+        const potEl = document.createElement('div');
+        potEl.className = 'winner-pot';
+        potEl.textContent = `🪙 ${pot}`;
+        display.appendChild(potEl);
+      }
     } else {
       const drawEl = document.createElement('div');
       drawEl.className = 'winner-name';
@@ -424,13 +433,13 @@ export function renderResults(state) {
 
   if (bountyList) {
     bountyList.innerHTML = '';
-    state.players.forEach((player) => {
+    state.players.forEach((player, i) => {
       const li = document.createElement('li');
       const nameSpan = document.createElement('span');
       nameSpan.textContent = `${player.emoji} ${player.name}`;
       const countSpan = document.createElement('span');
       countSpan.className = 'bounty-value';
-      countSpan.textContent = `🃏 ${player.hand.length} cards`;
+      countSpan.textContent = getPlayerMetric('simple-rummy', state, i);
       li.appendChild(nameSpan);
       li.appendChild(countSpan);
       bountyList.appendChild(li);

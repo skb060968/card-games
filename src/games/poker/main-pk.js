@@ -270,7 +270,7 @@ async function handleAction(action) {
         break;
       case 'raise':
         playSound('throw');
-        setEventMessage(`You raised 20 chips`);
+        setEventMessage(`You raised`);
         break;
       case 'call':
         playSound('throw');
@@ -341,7 +341,7 @@ function handleRemoteUpdate(gameData, lastMove) {
         break;
       case 'raise':
         playSound('throw');
-        setEventMessage(`${actorEmoji} ${actorName} raised 20 chips`);
+        setEventMessage(`${actorEmoji} ${actorName} raised`);
         break;
       case 'call':
         playSound('throw');

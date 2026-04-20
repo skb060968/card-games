@@ -714,6 +714,21 @@ body {
   margin-top: 4px;
 }
 
+/* Win Pot Display — cosmetic reward shown on results screen */
+.winner-display .winner-pot {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin: 8px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .winner-display .winner-pot {
+    animation: none !important;
+  }
+}
+
 .results-bounty-list {
   list-style: none;
   width: 100%;

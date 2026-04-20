@@ -6,6 +6,7 @@
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
+import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
 
 /* ======= CONSTANTS ======= */
 
@@ -537,6 +538,14 @@ export function renderResults(state) {
 
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
+
+      const pot = calculatePot('bluff', state);
+      if (pot > 0) {
+        const potEl = document.createElement('div');
+        potEl.className = 'winner-pot';
+        potEl.textContent = `🪙 ${pot}`;
+        display.appendChild(potEl);
+      }
     } else {
       const drawEl = document.createElement('div');
       drawEl.className = 'winner-name';
@@ -547,13 +556,13 @@ export function renderResults(state) {
 
   if (resultsList) {
     resultsList.innerHTML = '';
-    state.players.forEach((player) => {
+    state.players.forEach((player, i) => {
       const li = document.createElement('li');
       const nameSpan = document.createElement('span');
       nameSpan.textContent = `${player.emoji} ${player.name}`;
       const countSpan = document.createElement('span');
       countSpan.className = 'bounty-value';
-      countSpan.textContent = `🃏 ${player.hand.length} cards`;
+      countSpan.textContent = getPlayerMetric('bluff', state, i);
       li.appendChild(nameSpan);
       li.appendChild(countSpan);
       resultsList.appendChild(li);

@@ -187,7 +187,14 @@ function renderCards(container, state, localPlayerIndex) {
 }
 
 /**
- * Renders action buttons based on game state.
+ * Renders action buttons based on game state and new betting rules.
+ *
+ * Button visibility rules:
+ * 1. No bets yet (maxBet === 0): Show Bet (10) only
+ * 2. Need to call (round 1): Show Call + Raise only (no Fold)
+ * 3. Need to call (round 2+): Show Call + Raise + Fold
+ * 4. Bets equal (round 2+): Show Raise + Show (if eligible) + Fold
+ * 5. Fold is NEVER available in round 1
  */
 function renderActions(container, state, localPlayerIndex, callbacks) {
   container.innerHTML = '';
@@ -209,69 +216,102 @@ function renderActions(container, state, localPlayerIndex, callbacks) {
   const btnRow = document.createElement('div');
   btnRow.className = 'pk-action-buttons';
 
-  // Determine available actions
+  // Compute state for button logic
   const activePlayers = state.players
-    .map((p, i) => ({ index: i, folded: p.folded, currentBet: p.currentBet }))
+    .map((p, i) => ({ index: i, folded: p.folded, currentBet: p.currentBet, hasActed: p.hasActed }))
     .filter((p) => !p.folded);
   const maxBet = Math.max(...activePlayers.map((p) => p.currentBet));
-  const callAmount = maxBet - player.currentBet;
+  const myBet = player.currentBet;
+  const needToCall = maxBet - myBet;
+  const allActed = activePlayers.every((p) => p.hasActed);
+  const noBetsYet = maxBet === 0;
 
-  // Bet button
-  if (player.chips >= 10) {
-    const betBtn = document.createElement('button');
-    betBtn.className = 'btn primary pk-action-btn';
-    betBtn.type = 'button';
-    betBtn.textContent = 'Bet (10)';
-    betBtn.addEventListener('click', () => {
-      if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'bet' });
-    });
-    btnRow.appendChild(betBtn);
-  }
+  if (noBetsYet) {
+    // First player of the round — no one has bet yet
+    // Show: Bet (10) only
+    if (player.chips >= 10) {
+      const betBtn = document.createElement('button');
+      betBtn.className = 'btn primary pk-action-btn';
+      betBtn.type = 'button';
+      betBtn.textContent = 'Bet (10)';
+      betBtn.addEventListener('click', () => {
+        if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'bet' });
+      });
+      btnRow.appendChild(betBtn);
+    }
+  } else if (needToCall > 0) {
+    // Someone has bet and my bet is less than max
+    // Show: Call + Raise, and Fold only if allActed (round 2+)
+    if (player.chips >= needToCall) {
+      const callBtn = document.createElement('button');
+      callBtn.className = 'btn secondary pk-action-btn';
+      callBtn.type = 'button';
+      callBtn.textContent = `Call (${needToCall})`;
+      callBtn.addEventListener('click', () => {
+        if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'call' });
+      });
+      btnRow.appendChild(callBtn);
+    }
 
-  // Call button (only if there's something to call)
-  if (callAmount > 0 && player.chips >= callAmount) {
-    const callBtn = document.createElement('button');
-    callBtn.className = 'btn secondary pk-action-btn';
-    callBtn.type = 'button';
-    callBtn.textContent = `Call (${callAmount})`;
-    callBtn.addEventListener('click', () => {
-      if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'call' });
-    });
-    btnRow.appendChild(callBtn);
-  }
+    const raiseTotalCost = needToCall + 10;
+    if (player.chips >= raiseTotalCost) {
+      const raiseBtn = document.createElement('button');
+      raiseBtn.className = 'btn primary pk-action-btn pk-raise-btn';
+      raiseBtn.type = 'button';
+      raiseBtn.textContent = `Raise (${raiseTotalCost})`;
+      raiseBtn.addEventListener('click', () => {
+        if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'raise' });
+      });
+      btnRow.appendChild(raiseBtn);
+    }
 
-  // Raise button
-  if (player.chips >= 20) {
-    const raiseBtn = document.createElement('button');
-    raiseBtn.className = 'btn primary pk-action-btn pk-raise-btn';
-    raiseBtn.type = 'button';
-    raiseBtn.textContent = 'Raise (20)';
-    raiseBtn.addEventListener('click', () => {
-      if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'raise' });
-    });
-    btnRow.appendChild(raiseBtn);
-  }
+    // Fold only after round 1 (all players have acted once)
+    if (allActed) {
+      const foldBtn = document.createElement('button');
+      foldBtn.className = 'btn secondary pk-action-btn pk-fold-btn';
+      foldBtn.type = 'button';
+      foldBtn.textContent = 'Fold';
+      foldBtn.addEventListener('click', () => {
+        if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'fold' });
+      });
+      btnRow.appendChild(foldBtn);
+    }
+  } else {
+    // Bets are equal and I've already matched
+    if (allActed) {
+      // Round 2+: Show Raise + Show (if eligible) + Fold
+      if (player.chips >= 10) {
+        const raiseBtn = document.createElement('button');
+        raiseBtn.className = 'btn primary pk-action-btn pk-raise-btn';
+        raiseBtn.type = 'button';
+        raiseBtn.textContent = 'Raise (10)';
+        raiseBtn.addEventListener('click', () => {
+          if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'raise' });
+        });
+        btnRow.appendChild(raiseBtn);
+      }
 
-  // Fold button (always available)
-  const foldBtn = document.createElement('button');
-  foldBtn.className = 'btn secondary pk-action-btn pk-fold-btn';
-  foldBtn.type = 'button';
-  foldBtn.textContent = 'Fold';
-  foldBtn.addEventListener('click', () => {
-    if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'fold' });
-  });
-  btnRow.appendChild(foldBtn);
+      if (state.showEligible) {
+        const showBtn = document.createElement('button');
+        showBtn.className = 'btn primary pk-action-btn pk-show-btn';
+        showBtn.type = 'button';
+        showBtn.textContent = '👁 Show';
+        showBtn.addEventListener('click', () => {
+          if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'show' });
+        });
+        btnRow.appendChild(showBtn);
+      }
 
-  // Show button (when eligible)
-  if (state.showEligible) {
-    const showBtn = document.createElement('button');
-    showBtn.className = 'btn primary pk-action-btn pk-show-btn';
-    showBtn.type = 'button';
-    showBtn.textContent = '👁 Show';
-    showBtn.addEventListener('click', () => {
-      if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'show' });
-    });
-    btnRow.appendChild(showBtn);
+      const foldBtn = document.createElement('button');
+      foldBtn.className = 'btn secondary pk-action-btn pk-fold-btn';
+      foldBtn.type = 'button';
+      foldBtn.textContent = 'Fold';
+      foldBtn.addEventListener('click', () => {
+        if (callbacks && callbacks.onAction) callbacks.onAction({ type: 'fold' });
+      });
+      btnRow.appendChild(foldBtn);
+    }
+    // else: waiting for others to act — no buttons (shouldn't happen since it's my turn)
   }
 
   container.appendChild(btnRow);

@@ -7,6 +7,7 @@
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 import { getCollectedRanks } from './engine.js';
+import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
 
 /* ======= CONSTANTS ======= */
 
@@ -439,6 +440,14 @@ export function renderResults(state) {
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
       display.appendChild(msgEl);
+
+      const pot = calculatePot('perfect-ten', state);
+      if (pot > 0) {
+        const potEl = document.createElement('div');
+        potEl.className = 'winner-pot';
+        potEl.textContent = `🪙 ${pot}`;
+        display.appendChild(potEl);
+      }
     } else {
       const drawEl = document.createElement('div');
       drawEl.className = 'winner-name';
@@ -449,14 +458,13 @@ export function renderResults(state) {
 
   if (resultsList) {
     resultsList.innerHTML = '';
-    state.players.forEach((player) => {
-      const collected = getCollectedRanks(player.hand);
+    state.players.forEach((player, i) => {
       const li = document.createElement('li');
       const nameSpan = document.createElement('span');
       nameSpan.textContent = `${player.emoji} ${player.name}`;
       const countSpan = document.createElement('span');
       countSpan.className = 'bounty-value';
-      countSpan.textContent = `${collected.size}/10 ranks`;
+      countSpan.textContent = getPlayerMetric('perfect-ten', state, i);
       li.appendChild(nameSpan);
       li.appendChild(countSpan);
       resultsList.appendChild(li);

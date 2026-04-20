@@ -6,6 +6,7 @@
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
+import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
 
 // =========================================================
 // Heap Rendering
@@ -259,6 +260,14 @@ export function renderResults(state) {
 
       winnerDisplay.appendChild(emojiEl);
       winnerDisplay.appendChild(nameEl);
+
+      const pot = calculatePot('patte-par-patta', state);
+      if (pot > 0) {
+        const potEl = document.createElement('div');
+        potEl.className = 'winner-pot';
+        potEl.textContent = `🪙 ${pot}`;
+        winnerDisplay.appendChild(potEl);
+      }
     } else {
       const drawEl = document.createElement('div');
       drawEl.className = 'winner-name';
@@ -270,7 +279,7 @@ export function renderResults(state) {
   if (bountyList) {
     bountyList.innerHTML = '';
 
-    state.players.forEach((player) => {
+    state.players.forEach((player, i) => {
       const li = document.createElement('li');
 
       const nameSpan = document.createElement('span');
@@ -278,11 +287,7 @@ export function renderResults(state) {
 
       const statusSpan = document.createElement('span');
       statusSpan.className = 'bounty-value';
-      if (player.eliminated) {
-        statusSpan.textContent = '❌ Out';
-      } else {
-        statusSpan.textContent = `🃏 ${player.hand.length} cards`;
-      }
+      statusSpan.textContent = getPlayerMetric('patte-par-patta', state, i);
 
       li.appendChild(nameSpan);
       li.appendChild(statusSpan);
