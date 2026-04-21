@@ -191,16 +191,22 @@ function animateCardMove(fromRect, toRect, cardEl, duration = 350) {
     floater.style.left = `${fromRect.left}px`;
     floater.style.top = `${fromRect.top}px`;
     floater.style.zIndex = '200';
-    floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+    floater.style.transition = 'none';
     floater.style.pointerEvents = 'none';
 
     document.body.appendChild(floater);
 
+    // Double-rAF: first frame ensures the browser paints at start position,
+    // second frame applies the transition so older devices animate correctly.
     requestAnimationFrame(() => {
-      const cardW = floater.offsetWidth;
-      const cardH = floater.offsetHeight;
-      floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
-      floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
+      floater.offsetWidth; // eslint-disable-line no-unused-expressions
+      floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+      requestAnimationFrame(() => {
+        const cardW = floater.offsetWidth;
+        const cardH = floater.offsetHeight;
+        floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
+        floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
+      });
     });
 
     setTimeout(() => {

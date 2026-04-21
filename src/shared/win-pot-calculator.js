@@ -151,3 +151,34 @@ export function getPlayerMetric(gameId, gameState, playerIndex) {
       return '';
   }
 }
+
+/**
+ * Creates a DOM element showing a CSS coin stack with the pot value.
+ * Returns a div.winner-pot containing a coin stack and the numeric value.
+ * The coin stack height scales with the pot value (3-5 coins).
+ * @param {number} pot — the pot value to display
+ * @returns {HTMLElement} the pot display element
+ */
+export function renderPotDisplay(pot) {
+  const container = document.createElement('div');
+  container.className = 'winner-pot';
+
+  // Coin stack — 3 to 5 coins based on pot size
+  const stack = document.createElement('div');
+  stack.className = 'coin-stack';
+  const coinCount = pot >= 100 ? 5 : pot >= 50 ? 4 : 3;
+  for (let i = 0; i < coinCount; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    stack.appendChild(coin);
+  }
+  container.appendChild(stack);
+
+  // Numeric value
+  const value = document.createElement('span');
+  value.className = 'pot-value';
+  value.textContent = String(pot);
+  container.appendChild(value);
+
+  return container;
+}

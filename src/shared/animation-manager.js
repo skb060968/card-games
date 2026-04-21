@@ -145,10 +145,14 @@ export function animateThrowToPile(deckRect, pileRect, cardFaceEl) {
   document.body.appendChild(floater);
 
   return new Promise((resolve) => {
-    // Step 1: Slide from deck to pile (300ms)
+    // Double-rAF: first frame ensures the browser paints at start position,
+    // second frame applies the move so older devices animate correctly.
     requestAnimationFrame(() => {
-      floater.style.left = `${pileRect.left + (pileRect.width - deckRect.width) / 2}px`;
-      floater.style.top = `${pileRect.top + (pileRect.height - deckRect.height) / 2}px`;
+      floater.offsetWidth; // force layout at start position
+      requestAnimationFrame(() => {
+        floater.style.left = `${pileRect.left + (pileRect.width - deckRect.width) / 2}px`;
+        floater.style.top = `${pileRect.top + (pileRect.height - deckRect.height) / 2}px`;
+      });
     });
 
     setTimeout(() => {

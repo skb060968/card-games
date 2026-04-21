@@ -93,16 +93,22 @@ function animateCardMove(fromRect, toRect, cardEl, duration = 350) {
     floater.style.left = `${fromRect.left}px`;
     floater.style.top = `${fromRect.top}px`;
     floater.style.zIndex = '200';
-    floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+    floater.style.transition = 'none';
     floater.style.pointerEvents = 'none';
 
     document.body.appendChild(floater);
 
+    // Double-rAF: first frame ensures the browser paints at start position,
+    // second frame applies the transition so older devices animate correctly.
     requestAnimationFrame(() => {
-      const cardW = floater.offsetWidth;
-      const cardH = floater.offsetHeight;
-      floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
-      floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
+      floater.offsetWidth; // eslint-disable-line no-unused-expressions
+      floater.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
+      requestAnimationFrame(() => {
+        const cardW = floater.offsetWidth;
+        const cardH = floater.offsetHeight;
+        floater.style.left = `${toRect.left + (toRect.width - cardW) / 2}px`;
+        floater.style.top = `${toRect.top + (toRect.height - cardH) / 2}px`;
+      });
     });
 
     setTimeout(() => {
@@ -353,24 +359,16 @@ async function handleDraw(source) {
     _isAnimating = true;
     await writeFullState(state, drawLastMove);
 
-    // Move drawn card to middle of hand for better visibility
-    const hand = [...state.players[playerIndex].hand];
-    const drawnCard = hand.pop();
-    const midIdx = Math.floor(hand.length / 2);
-    hand.splice(midIdx, 0, drawnCard);
-    const newPlayers = state.players.map((p, i) => {
-      if (i === playerIndex) return { ...p, hand };
-      return { ...p };
-    });
-    state = { ...state, players: newPlayers };
+    // Drawn card stays at end of hand (last position in arc)
+    const endIdx = state.players[playerIndex].hand.length - 1;
 
-    setNewlyDrawnIndex(midIdx);
+    setNewlyDrawnIndex(endIdx);
     renderUI();
 
-    // Animate: card slides from pile to hand
+    // Animate: card slides from pile to hand end
     if (pileRect) {
-      const midCard = document.querySelector(`#pt-hand-area .sr-arc-card[data-hand-index="${midIdx}"]`);
-      const handRect = midCard ? midCard.getBoundingClientRect() : getHandEndRect();
+      const endCard = document.querySelector(`#pt-hand-area .sr-arc-card[data-hand-index="${endIdx}"]`);
+      const handRect = endCard ? endCard.getBoundingClientRect() : getHandEndRect();
       if (handRect) {
         playSound('throw');
         const cardEl = source === 'drawPile'

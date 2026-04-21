@@ -6,7 +6,7 @@
  */
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
-import { calculatePot, getPlayerMetric } from '../../shared/win-pot-calculator.js';
+import { calculatePot, getPlayerMetric, renderPotDisplay } from '../../shared/win-pot-calculator.js';
 
 // =========================================================
 // Heap Rendering
@@ -263,10 +263,7 @@ export function renderResults(state) {
 
       const pot = calculatePot('patte-par-patta', state);
       if (pot > 0) {
-        const potEl = document.createElement('div');
-        potEl.className = 'winner-pot';
-        potEl.textContent = `🪙 ${pot}`;
-        winnerDisplay.appendChild(potEl);
+        winnerDisplay.appendChild(renderPotDisplay(pot));
       }
     } else {
       const drawEl = document.createElement('div');

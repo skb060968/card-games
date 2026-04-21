@@ -5,7 +5,7 @@
    - Update detection + prompt support
    ============================== */
 
-const CACHE_NAME = "card-games-v4";
+const CACHE_NAME = "card-games-v5";
 
 // Pre-cache truly static assets (not Vite-hashed JS/CSS)
 const STATIC_ASSETS = [

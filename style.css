@@ -714,17 +714,58 @@ body {
   margin-top: 4px;
 }
 
-/* Win Pot Display — cosmetic reward shown on results screen */
-.winner-display .winner-pot {
+/* Win Pot Display — CSS coin stack + pot value */
+.winner-pot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.winner-pot .coin-stack {
+  position: relative;
+  width: 32px;
+  height: 44px;
+}
+
+.winner-pot .coin {
+  position: absolute;
+  left: 0;
+  width: 32px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffd700 0%, #daa520 40%, #b8860b 100%);
+  border: 1.5px solid #a07010;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.winner-pot .coin::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  right: 6px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.winner-pot .coin:nth-child(1) { bottom: 0; }
+.winner-pot .coin:nth-child(2) { bottom: 6px; }
+.winner-pot .coin:nth-child(3) { bottom: 12px; }
+.winner-pot .coin:nth-child(4) { bottom: 18px; }
+.winner-pot .coin:nth-child(5) { bottom: 24px; }
+
+.winner-pot .pot-value {
   font-size: 1.6rem;
   font-weight: 800;
   color: var(--color-accent);
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  margin: 8px 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .winner-display .winner-pot {
+  .winner-pot {
     animation: none !important;
   }
 }

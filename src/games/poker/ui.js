@@ -8,6 +8,7 @@
 
 import { renderCardFace, renderCardBack } from '../../shared/card-renderer.js';
 import { evaluateHand } from './engine.js';
+import { renderPotDisplay } from '../../shared/win-pot-calculator.js';
 
 /* ======= GAMEPLAY RENDERING ======= */
 
@@ -353,6 +354,12 @@ export function renderResults(state, isFoldWin = false) {
 
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
+
+      // Show pot won as coin stack (chips gained = winner.chips - 100 starting)
+      const potWon = winner.chips - 100;
+      if (potWon > 0) {
+        display.appendChild(renderPotDisplay(potWon));
+      }
 
       // Show hand ranking if it was a show (not fold win)
       if (!isFoldWin) {
