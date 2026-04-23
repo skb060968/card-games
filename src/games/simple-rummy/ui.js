@@ -371,16 +371,40 @@ export function showWinReveal(winner, winGroups, duration = 4000) {
     if (emojiEl) emojiEl.textContent = winner.emoji || '🏆';
     if (nameEl) nameEl.textContent = `${winner.name} wins!`;
 
-    // Populate grouped cards
+    // Rank values for sorting
+    const RV = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+
+    // Populate grouped cards — sort each group for clean display
     cardsEl.innerHTML = '';
     if (winGroups && winGroups.length > 0) {
       const groupsContainer = document.createElement('div');
       groupsContainer.className = 'sr-win-groups';
 
       winGroups.forEach((group) => {
+        // Sort: if all same suit → sequence, sort by rank; else → set, sort by suit
+        const sorted = [...group];
+        const allSameSuit = sorted.every((c) => c.suit === sorted[0].suit);
+        if (allSameSuit) {
+          // Sequence — sort by rank value; handle ace-high (Q-K-A)
+          sorted.sort((a, b) => RV[a.rank] - RV[b.rank]);
+          // If ace-high sequence (e.g., Q-K-A), move ace to end
+          if (sorted.length >= 3 && RV[sorted[0].rank] === 1) {
+            const rest = sorted.slice(1);
+            const minRest = Math.min(...rest.map((c) => RV[c.rank]));
+            if (minRest >= 12) {
+              // Ace-high: move ace to end
+              sorted.push(sorted.shift());
+            }
+          }
+        } else {
+          // Set — sort by suit for consistent ordering
+          const suitOrder = { '♠': 0, '♥': 1, '♦': 2, '♣': 3 };
+          sorted.sort((a, b) => (suitOrder[a.suit] || 0) - (suitOrder[b.suit] || 0));
+        }
+
         const groupEl = document.createElement('div');
         groupEl.className = 'sr-win-group';
-        group.forEach((card) => {
+        sorted.forEach((card) => {
           const cardEl = renderCardFace(card);
           cardEl.style.cursor = 'default';
           groupEl.appendChild(cardEl);

@@ -387,12 +387,16 @@ export function showWinReveal(winner, hand, duration = 4000) {
       trackerEl.appendChild(tracker);
     }
 
-    // Populate face-up cards
+    // Rank values for sorting
+    const RV = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+
+    // Populate face-up cards — sorted by rank
     cardsEl.innerHTML = '';
     if (hand && hand.length > 0) {
+      const sorted = [...hand].sort((a, b) => (RV[a.rank] || 0) - (RV[b.rank] || 0));
       const handContainer = document.createElement('div');
       handContainer.className = 'win-reveal-hand';
-      hand.forEach((card) => {
+      sorted.forEach((card) => {
         const cardEl = renderCardFace(card);
         cardEl.style.cursor = 'default';
         handContainer.appendChild(cardEl);
