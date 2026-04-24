@@ -163,16 +163,23 @@ export function renderPotDisplay(pot) {
   const container = document.createElement('div');
   container.className = 'winner-pot';
 
-  // Coin stack — 3 to 5 coins based on pot size
-  const stack = document.createElement('div');
-  stack.className = 'coin-stack';
-  const coinCount = pot >= 100 ? 5 : pot >= 50 ? 4 : 3;
-  for (let i = 0; i < coinCount; i++) {
-    const coin = document.createElement('div');
-    coin.className = 'coin';
-    stack.appendChild(coin);
+  // Number of stacks: 1 stack per ~30 pot, min 1, max 5
+  const stackCount = Math.min(5, Math.max(1, Math.ceil(pot / 30)));
+
+  const stacksWrap = document.createElement('div');
+  stacksWrap.className = 'coin-stacks-wrap';
+
+  for (let s = 0; s < stackCount; s++) {
+    const stack = document.createElement('div');
+    stack.className = 'coin-stack';
+    for (let i = 0; i < 4; i++) {
+      const coin = document.createElement('div');
+      coin.className = 'coin';
+      stack.appendChild(coin);
+    }
+    stacksWrap.appendChild(stack);
   }
-  container.appendChild(stack);
+  container.appendChild(stacksWrap);
 
   // Numeric value
   const value = document.createElement('span');
@@ -201,30 +208,13 @@ export function coinRain(coinCount = 20, duration = 2500) {
   for (let i = 0; i < coinCount; i++) {
     const coin = document.createElement('div');
     coin.className = 'coin-rain-drop';
-
-    // Random horizontal position
     coin.style.left = `${Math.random() * 100}%`;
-
-    // Random delay so coins don't all fall at once
-    const delay = Math.random() * (duration * 0.4);
-    coin.style.animationDelay = `${delay}ms`;
-
-    // Random fall duration for variety
-    const fallTime = 1200 + Math.random() * 1000;
-    coin.style.animationDuration = `${fallTime}ms`;
-
-    // Random size variation
-    const scale = 0.7 + Math.random() * 0.6;
-    coin.style.setProperty('--coin-scale', String(scale));
-
-    // Random horizontal drift
-    const drift = -30 + Math.random() * 60;
-    coin.style.setProperty('--coin-drift', `${drift}px`);
-
+    coin.style.animationDelay = `${Math.random() * (duration * 0.4)}ms`;
+    coin.style.animationDuration = `${1200 + Math.random() * 1000}ms`;
+    coin.style.setProperty('--coin-drift', `${-30 + Math.random() * 60}px`);
     container.appendChild(coin);
   }
 
-  // Clean up after all coins have fallen
   setTimeout(() => {
     if (container.parentNode) container.parentNode.removeChild(container);
   }, duration + 500);
