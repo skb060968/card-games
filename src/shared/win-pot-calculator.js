@@ -182,3 +182,50 @@ export function renderPotDisplay(pot) {
 
   return container;
 }
+
+/**
+ * Triggers a falling coin rain animation across the screen.
+ * Creates CSS-animated gold coins that fall from the top with rotation and varying speeds.
+ * Respects prefers-reduced-motion. Auto-cleans up after animation completes.
+ * @param {number} [coinCount=20] — number of coins to drop
+ * @param {number} [duration=2500] — total animation duration in ms
+ */
+export function coinRain(coinCount = 20, duration = 2500) {
+  if (typeof window === 'undefined') return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const container = document.createElement('div');
+  container.className = 'coin-rain-container';
+  document.body.appendChild(container);
+
+  for (let i = 0; i < coinCount; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'coin-rain-drop';
+
+    // Random horizontal position
+    coin.style.left = `${Math.random() * 100}%`;
+
+    // Random delay so coins don't all fall at once
+    const delay = Math.random() * (duration * 0.4);
+    coin.style.animationDelay = `${delay}ms`;
+
+    // Random fall duration for variety
+    const fallTime = 1200 + Math.random() * 1000;
+    coin.style.animationDuration = `${fallTime}ms`;
+
+    // Random size variation
+    const scale = 0.7 + Math.random() * 0.6;
+    coin.style.setProperty('--coin-scale', String(scale));
+
+    // Random horizontal drift
+    const drift = -30 + Math.random() * 60;
+    coin.style.setProperty('--coin-drift', `${drift}px`);
+
+    container.appendChild(coin);
+  }
+
+  // Clean up after all coins have fallen
+  setTimeout(() => {
+    if (container.parentNode) container.parentNode.removeChild(container);
+  }, duration + 500);
+}

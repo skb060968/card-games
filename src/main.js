@@ -26,6 +26,7 @@ import {
 
 import { animateSweep, animateThrowToPile } from './shared/animation-manager.js';
 import { renderCardFace } from './shared/card-renderer.js';
+import { coinRain } from './shared/win-pot-calculator.js';
 import {
   announceCapture,
   announceWin,
@@ -548,6 +549,7 @@ async function handleCardTap(handIndex) {
         if (typeof confetti === 'function') {
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
+        coinRain();
       }
       renderResults(state);
       showScreen('ppp-results');
@@ -676,6 +678,7 @@ function _finishRemoteUpdate(newState) {
       if (typeof confetti === 'function') {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       }
+      coinRain();
     }
     renderResults(state);
     showScreen('ppp-results');

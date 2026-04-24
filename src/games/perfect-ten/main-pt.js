@@ -31,6 +31,7 @@ import {
   warmSpeech,
   playSound,
 } from '../../shared/voice-announcer.js';
+import { coinRain } from '../../shared/win-pot-calculator.js';
 import {
   createRoom,
   joinRoom,
@@ -429,6 +430,7 @@ async function handleDiscard(handIndex) {
       _isAnimating = false;
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        coinRain();
         const winner = state.players[state.winnerIndex];
         announceWin(winner.name);
         await showWinReveal(winner, winner.hand, 4000);
@@ -448,6 +450,7 @@ async function handleDiscard(handIndex) {
 
       if (won) {
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        coinRain();
         const winner = state.players[state.winnerIndex];
         announceWin(winner.name);
         await showWinReveal(winner, winner.hand, 4000);
@@ -530,6 +533,7 @@ function handleRemoteUpdate(gameData, lastMove) {
       if (state.winnerIndex != null) {
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        coinRain();
         announceWin(winner.name);
         showWinReveal(winner, winner.hand, 4000).then(() => {
           renderResults(state);
@@ -581,6 +585,7 @@ function handleRemoteUpdate(gameData, lastMove) {
       if (state.winnerIndex != null) {
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        coinRain();
         announceWin(winner.name);
         showWinReveal(winner, winner.hand, 4000).then(() => {
           renderResults(state);
@@ -644,6 +649,7 @@ function handleRemoteUpdate(gameData, lastMove) {
     if (state.winnerIndex != null) {
       const winner = state.players[state.winnerIndex];
       if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      coinRain();
       announceWin(winner.name);
       showWinReveal(winner, winner.hand, 4000).then(() => {
         renderResults(state);

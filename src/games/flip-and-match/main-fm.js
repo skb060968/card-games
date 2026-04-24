@@ -31,6 +31,7 @@ import {
   warmSpeech,
   playSound,
 } from '../../shared/voice-announcer.js';
+import { coinRain } from '../../shared/win-pot-calculator.js';
 import {
   createRoom,
   joinRoom,
@@ -387,6 +388,7 @@ async function handleWin() {
     if (typeof confetti === 'function') {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
+    coinRain();
   }
 
   renderResults(state);
