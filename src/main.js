@@ -82,6 +82,7 @@ let playerIndex = null;
 let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
+let _resultsShown = false;
 
 /* ======= DOM REFERENCES ======= */
 
@@ -453,6 +454,7 @@ function wireLobby() {
 /* ======= GAMEPLAY (Task 9.5) ======= */
 
 function startOnlineGame() {
+  _resultsShown = false;
   showScreen('ppp-gameplay');
   setEventMessage('');
 
@@ -543,7 +545,8 @@ async function handleCardTap(handIndex) {
     if (winResult.finished) {
       if (winResult.draw) {
         setEventMessage('Game is a draw!');
-      } else {
+      } else if (!_resultsShown) {
+        _resultsShown = true;
         const winner = state.players[winResult.winnerIndex];
         await announceWin(winner.name);
         if (typeof confetti === 'function') {
@@ -673,7 +676,8 @@ function _finishRemoteUpdate(newState) {
   if (state.status === 'finished' || (state.winnerIndex != null && state.winnerIndex >= 0)) {
     state.status = 'finished';
     const winner = state.players[state.winnerIndex];
-    if (winner) {
+    if (winner && !_resultsShown) {
+      _resultsShown = true;
       announceWin(winner.name);
       if (typeof confetti === 'function') {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });

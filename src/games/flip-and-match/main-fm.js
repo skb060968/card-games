@@ -58,6 +58,7 @@ let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
 let isProcessingFlip = false;
+let _resultsShown = false;
 
 /* ======= SESSION ======= */
 
@@ -257,6 +258,7 @@ function wireLobby() {
 /* ======= GAMEPLAY ======= */
 
 function startGame() {
+  _resultsShown = false;
   showScreen('fm-gameplay');
   const endBtn = document.getElementById('fm-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -382,6 +384,9 @@ async function handleFlip(cardIndex) {
 /* ======= WIN HANDLING ======= */
 
 async function handleWin() {
+  if (_resultsShown) { renderResults(state); showScreen('fm-results'); return; }
+  _resultsShown = true;
+
   if (state.winnerIndex != null && !state.isTie) {
     const winner = state.players[state.winnerIndex];
     await announceWin(winner.name);

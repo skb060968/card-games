@@ -328,15 +328,34 @@ export function renderWinDisplay(groups, winner) {
   display.appendChild(emojiEl);
   display.appendChild(nameEl);
 
-  // Show grouped cards
+  // Rank values for sorting
+  const RV = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+
+  // Show grouped cards — sorted within each group
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'sr-win-groups';
 
   groups.forEach((group) => {
+    const sorted = [...group];
+    const allSameSuit = sorted.every((c) => c.suit === sorted[0].suit);
+    if (allSameSuit) {
+      sorted.sort((a, b) => RV[a.rank] - RV[b.rank]);
+      if (sorted.length >= 3 && RV[sorted[0].rank] === 1) {
+        const rest = sorted.slice(1);
+        const minRest = Math.min(...rest.map((c) => RV[c.rank]));
+        if (minRest >= 12) {
+          sorted.push(sorted.shift());
+        }
+      }
+    } else {
+      const suitOrder = { '♠': 0, '♥': 1, '♦': 2, '♣': 3 };
+      sorted.sort((a, b) => (suitOrder[a.suit] || 0) - (suitOrder[b.suit] || 0));
+    }
+
     const groupEl = document.createElement('div');
     groupEl.className = 'sr-win-group';
 
-    group.forEach((card) => {
+    sorted.forEach((card) => {
       const cardEl = renderCardFace(card);
       cardEl.style.cursor = 'default';
       groupEl.appendChild(cardEl);

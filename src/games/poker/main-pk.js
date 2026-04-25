@@ -54,6 +54,7 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
+let _resultsShown = false;
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -221,6 +222,7 @@ function wireLobby() {
 /* ======= GAMEPLAY ======= */
 
 function startGame() {
+  _resultsShown = false;
   showScreen('pk-gameplay');
   const endBtn = document.getElementById('pk-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -302,6 +304,9 @@ async function handleAction(action) {
 /* ======= WIN HANDLING ======= */
 
 async function handleWin(isFoldWin = false) {
+  if (_resultsShown) { renderResults(state, isFoldWin); showScreen('pk-results'); return; }
+  _resultsShown = true;
+
   if (state.winnerIndex != null) {
     const winner = state.players[state.winnerIndex];
     await announceWin(winner.name);

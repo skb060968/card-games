@@ -61,6 +61,7 @@ let unsubscribeRoom = null;
 let goHome = null;
 // _lastDrawSource and _lastDrawnCard removed — each Firebase write now carries its own lastMove
 let _isAnimating = false;
+let _resultsShown = false;
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -284,6 +285,7 @@ function wireLobby() {
 /* ======= GAMEPLAY ======= */
 
 function startGame() {
+  _resultsShown = false;
   showScreen('pt-gameplay');
   const endBtn = document.getElementById('pt-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -429,11 +431,14 @@ async function handleDiscard(handIndex) {
 
       _isAnimating = false;
       if (won) {
-        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        coinRain();
-        const winner = state.players[state.winnerIndex];
-        announceWin(winner.name);
-        await showWinReveal(winner, winner.hand, 4000);
+        if (!_resultsShown) {
+          _resultsShown = true;
+          if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          coinRain();
+          const winner = state.players[state.winnerIndex];
+          announceWin(winner.name);
+          await showWinReveal(winner, winner.hand, 4000);
+        }
         renderResults(state);
         showScreen('pt-results');
         startReadyListener();
@@ -449,11 +454,14 @@ async function handleDiscard(handIndex) {
       _isAnimating = false;
 
       if (won) {
-        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        coinRain();
-        const winner = state.players[state.winnerIndex];
-        announceWin(winner.name);
-        await showWinReveal(winner, winner.hand, 4000);
+        if (!_resultsShown) {
+          _resultsShown = true;
+          if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          coinRain();
+          const winner = state.players[state.winnerIndex];
+          announceWin(winner.name);
+          await showWinReveal(winner, winner.hand, 4000);
+        }
         renderResults(state);
         showScreen('pt-results');
         startReadyListener();
@@ -530,7 +538,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     state = newState;
 
     if (state.status === 'finished') {
-      if (state.winnerIndex != null) {
+      if (state.winnerIndex != null && !_resultsShown) {
+        _resultsShown = true;
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         coinRain();
@@ -582,7 +591,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     state = newState;
 
     if (state.status === 'finished') {
-      if (state.winnerIndex != null) {
+      if (state.winnerIndex != null && !_resultsShown) {
+        _resultsShown = true;
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         coinRain();
@@ -646,7 +656,8 @@ function handleRemoteUpdate(gameData, lastMove) {
   state = newState;
 
   if (state.status === 'finished') {
-    if (state.winnerIndex != null) {
+    if (state.winnerIndex != null && !_resultsShown) {
+      _resultsShown = true;
       const winner = state.players[state.winnerIndex];
       if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       coinRain();

@@ -86,6 +86,7 @@ function cleanupAndGoHome() {
 /* ======= CARD ANIMATIONS ======= */
 
 let _isAnimating = false;
+let _resultsShown = false;
 
 /**
  * Animates a floating card from one rect to another.
@@ -310,6 +311,7 @@ function wireLobby() {
 /* ======= GAMEPLAY ======= */
 
 function startGame() {
+  _resultsShown = false;
   showScreen('sr-gameplay');
   const endBtn = document.getElementById('sr-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -461,11 +463,14 @@ async function handleDiscard(handIndex) {
       _isAnimating = false;
       // Check win AFTER animation
       if (won) {
-        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        coinRain();
-        const winner = state.players[state.winnerIndex];
-        announceWin(winner.name);
-        await showWinReveal(winner, state.winGroups || [], 4000);
+        if (!_resultsShown) {
+          _resultsShown = true;
+          if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          coinRain();
+          const winner = state.players[state.winnerIndex];
+          announceWin(winner.name);
+          await showWinReveal(winner, state.winGroups || [], 4000);
+        }
         renderResults(state);
         showScreen('sr-results');
         startReadyListener();
@@ -482,11 +487,14 @@ async function handleDiscard(handIndex) {
       _isAnimating = false;
 
       if (won) {
-        if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        coinRain();
-        const winner = state.players[state.winnerIndex];
-        announceWin(winner.name);
-        await showWinReveal(winner, state.winGroups || [], 4000);
+        if (!_resultsShown) {
+          _resultsShown = true;
+          if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          coinRain();
+          const winner = state.players[state.winnerIndex];
+          announceWin(winner.name);
+          await showWinReveal(winner, state.winGroups || [], 4000);
+        }
         renderResults(state);
         showScreen('sr-results');
         startReadyListener();
@@ -563,7 +571,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     state = newState;
 
     if (state.status === 'finished') {
-      if (state.winnerIndex != null) {
+      if (state.winnerIndex != null && !_resultsShown) {
+        _resultsShown = true;
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         coinRain();
@@ -615,7 +624,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     state = newState;
 
     if (state.status === 'finished') {
-      if (state.winnerIndex != null) {
+      if (state.winnerIndex != null && !_resultsShown) {
+        _resultsShown = true;
         const winner = state.players[state.winnerIndex];
         if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         coinRain();
@@ -679,7 +689,8 @@ function handleRemoteUpdate(gameData, lastMove) {
   state = newState;
 
   if (state.status === 'finished') {
-    if (state.winnerIndex != null) {
+    if (state.winnerIndex != null && !_resultsShown) {
+      _resultsShown = true;
       const winner = state.players[state.winnerIndex];
       if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       coinRain();

@@ -71,6 +71,7 @@ let goHome = null;
 let _challengeTimer = null;
 let _challengeCountdownInterval = null;
 let _isAnimating = false;
+let _resultsShown = false;
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -457,6 +458,7 @@ function wireLobby() {
 /* ======= GAMEPLAY ======= */
 
 function startGame() {
+  _resultsShown = false;
   showScreen('bl-gameplay');
   const endBtn = document.getElementById('bl-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -728,6 +730,9 @@ async function handleChallengeExpiry() {
 async function handleWin() {
   clearChallengeTimers();
   hideChallengeWindow();
+
+  if (_resultsShown) { renderResults(state); showScreen('bl-results'); return; }
+  _resultsShown = true;
 
   if (state.winnerIndex != null) {
     const winner = state.players[state.winnerIndex];
