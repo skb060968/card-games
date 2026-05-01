@@ -2366,6 +2366,18 @@ body {
   text-shadow: 0 0 8px rgba(243, 156, 18, 0.5);
 }
 
+/* Winner cards highlight during showdown reveal */
+.pk-player-cards.pk-cards-winner .pk-cards-row .card {
+  transform: translateY(-8px);
+  box-shadow: 0 0 14px rgba(243, 156, 18, 0.7), 0 0 28px rgba(243, 156, 18, 0.3);
+  transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+}
+
+.pk-player-cards.pk-cards-winner .pk-card-label {
+  color: var(--color-accent);
+  font-weight: 800;
+}
+
 /* Actions area */
 .pk-actions-area {
   display: flex;

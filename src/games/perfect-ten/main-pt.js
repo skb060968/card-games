@@ -340,6 +340,9 @@ async function handleDraw(source) {
     const oldDiscardTop = source === 'discardPile' && state.discardPile.length > 0
       ? state.discardPile[state.discardPile.length - 1] : null;
 
+    // Save the player's current hand order before engine modifies it
+    const oldHand = [...state.players[playerIndex].hand];
+
     const newState = drawCard(state, source);
     if (newState.status === 'finished') {
       state = newState;
@@ -349,7 +352,18 @@ async function handleDraw(source) {
       startReadyListener();
       return;
     }
-    state = newState;
+
+    // Find the newly drawn card (engine appends at end)
+    const newHand = newState.players[playerIndex].hand;
+    const drawnCard = newHand[newHand.length - 1];
+
+    // Reconstruct hand: keep player's custom order + append drawn card at end
+    const restoredHand = [...oldHand, drawnCard];
+    const restoredPlayers = newState.players.map((p, i) => {
+      if (i === playerIndex) return { ...p, hand: restoredHand };
+      return p;
+    });
+    state = { ...newState, players: restoredPlayers };
 
     // Write 1 — after draw: write state to Firebase immediately
     const drawLastMove = {
@@ -491,6 +505,21 @@ function handleRemoteUpdate(gameData, lastMove) {
   });
 
   const newState = deserializeState(gameData, playersData);
+
+  // Preserve local player's hand order (reordering is local-only, not synced to Firebase)
+  if (state && playerIndex != null && newState.players[playerIndex]) {
+    const localHand = state.players[playerIndex].hand;
+    const serverHand = newState.players[playerIndex].hand;
+    if (localHand.length === serverHand.length) {
+      newState.players[playerIndex].hand = localHand;
+    } else if (serverHand.length === localHand.length + 1) {
+      const localKeys = new Set(localHand.map(c => `${c.rank}${c.suit}`));
+      const newCard = serverHand.find(c => !localKeys.has(`${c.rank}${c.suit}`));
+      if (newCard) {
+        newState.players[playerIndex].hand = [...localHand, newCard];
+      }
+    }
+  }
 
   // Detect opponent draw action — animate draw only
   if (lastMove && lastMove.action === 'draw' && lastMove.playerIndex !== playerIndex) {

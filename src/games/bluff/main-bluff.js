@@ -58,7 +58,7 @@ import { ref, get, update, remove, onValue, off } from 'firebase/database';
 /* ======= CONSTANTS ======= */
 const GAME_ID = 'bluff';
 const BL_SESSION_KEY = 'card_games_bluff_session';
-const CHALLENGE_WINDOW_MS = 5000;
+const CHALLENGE_WINDOW_MS = 10000;
 
 /* ======= STATE ======= */
 let state = null;
@@ -660,7 +660,10 @@ async function handleChallenge() {
     // Announce
     speak('Bluff called!');
 
-    const loserIndex = bluffCaught ? state.lastPlacement.playerIndex : playerIndex;
+    const placerIndex = state.lastPlacement.playerIndex;
+    const placerName = state.players[placerIndex].name;
+    const declaredRank = state.lastPlacement.declaredRank;
+    const loserIndex = bluffCaught ? placerIndex : playerIndex;
     const loserName = state.players[loserIndex].name;
 
     state = newState;
@@ -678,7 +681,7 @@ async function handleChallenge() {
     hideChallengeWindow();
 
     // Show result overlay
-    await renderChallengeResult(revealedCards, state.lastPlacement ? state.lastPlacement.declaredRank : '', bluffCaught, loserName);
+    await renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName);
 
     // Animate pile sweep to loser
     playSound('capture');
@@ -686,11 +689,11 @@ async function handleChallenge() {
 
     // Announce outcome
     if (bluffCaught) {
-      speak(`${state.players[loserIndex].name} caught bluffing!`);
-      setEventMessage(`🚨 ${state.players[loserIndex].name} caught bluffing! Takes the pile.`);
+      speak(`${placerName} caught bluffing!`);
+      setEventMessage(`🚨 ${placerName} was bluffing! ${placerName} takes the pile.`);
     } else {
-      speak(`${loserName} was truthful!`);
-      setEventMessage(`✅ Was truthful! ${loserName} takes the pile.`);
+      speak(`${placerName} was truthful!`);
+      setEventMessage(`✅ ${placerName} was truthful! ${loserName} takes the pile.`);
     }
 
     clearSelection();
@@ -773,6 +776,8 @@ function handleRemoteUpdate(gameData, lastMove) {
     const declaredRank = oldLastPlacement ? oldLastPlacement.declaredRank : '';
     const bluffCaught = lastMove.bluffCaught;
     const loserIndex = lastMove.loserIndex;
+    const placerIdx = oldLastPlacement ? oldLastPlacement.playerIndex : null;
+    const placerName = placerIdx != null && state ? state.players[placerIdx]?.name || 'Player' : 'Player';
     const loserName = state && loserIndex != null ? state.players[loserIndex]?.name || 'Player' : 'Player';
 
     state = newState;
@@ -785,11 +790,11 @@ function handleRemoteUpdate(gameData, lastMove) {
       await animatePileSweep(loserIndex);
 
       if (bluffCaught) {
-        speak(`${loserName} caught bluffing!`);
-        setEventMessage(`🚨 ${loserName} caught bluffing! Takes the pile.`);
+        speak(`${placerName} caught bluffing!`);
+        setEventMessage(`🚨 ${placerName} was bluffing! ${placerName} takes the pile.`);
       } else {
-        speak(`${loserName} was truthful!`);
-        setEventMessage(`✅ Was truthful! ${loserName} takes the pile.`);
+        speak(`${placerName} was truthful!`);
+        setEventMessage(`✅ ${placerName} was truthful! ${loserName} takes the pile.`);
       }
       clearSelection();
       renderUI();

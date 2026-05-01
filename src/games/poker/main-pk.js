@@ -308,7 +308,18 @@ async function handleWin(isFoldWin = false) {
   _resultsShown = true;
 
   if (state.winnerIndex != null) {
+    // Show all hands revealed on the gameplay screen first
+    renderUI();
+
     const winner = state.players[state.winnerIndex];
+
+    if (!isFoldWin) {
+      // Showdown: display all hands for 5 seconds before results
+      playSound('capture');
+      setEventMessage(`🏆 ${winner.emoji} ${winner.name} wins with ${(() => { try { return evaluateHand(winner.hand).label; } catch (_) { return ''; } })()}!`);
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+
     await announceWin(winner.name);
     if (typeof confetti === 'function') {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });

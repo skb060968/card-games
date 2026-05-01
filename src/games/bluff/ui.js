@@ -11,7 +11,7 @@ import { calculatePot, getPlayerMetric, renderPotDisplay } from '../../shared/wi
 /* ======= CONSTANTS ======= */
 
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const CHALLENGE_WINDOW_MS = 5000;
+const CHALLENGE_WINDOW_MS = 10000;
 
 /* ======= SELECTION STATE ======= */
 

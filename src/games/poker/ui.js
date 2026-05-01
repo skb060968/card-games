@@ -135,6 +135,9 @@ function renderCards(container, state, localPlayerIndex) {
     if (i === state.currentPlayerIndex && state.status === 'betting') {
       playerCards.classList.add('pk-cards-active');
     }
+    if (i === state.winnerIndex && state.status === 'finished' && !player.folded) {
+      playerCards.classList.add('pk-cards-winner');
+    }
 
     // Player label
     const label = document.createElement('div');
