@@ -1594,6 +1594,29 @@ body {
   opacity: 0.8;
 }
 
+/* Prominent placement banner — shows who placed what */
+.bl-placement-banner {
+  background: linear-gradient(180deg, rgba(243,156,18,0.25) 0%, rgba(243,156,18,0.1) 100%);
+  border: 2px solid rgba(243,156,18,0.5);
+  padding: 8px 20px;
+  max-width: 260px;
+  box-shadow: 0 0 12px rgba(243,156,18,0.2);
+}
+
+.bl-banner-who {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  opacity: 0.9;
+}
+
+.bl-banner-what {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--color-accent);
+  letter-spacing: 1px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
 /* Action row (place + pass buttons) */
 .bl-action-row {
   display: flex;

@@ -220,16 +220,35 @@ function renderRoundRankIndicator(state) {
     if (!pileArea) return;
     indicator = document.createElement('div');
     indicator.id = 'bl-round-rank-indicator';
-    indicator.className = 'bl-round-rank-indicator';
     pileArea.parentNode.insertBefore(indicator, pileArea);
   }
 
-  if (state.currentRank) {
-    indicator.textContent = `Round: ${state.currentRank}s`;
+  // Show last placement announcement prominently
+  if (state.lastPlacement) {
+    const lp = state.lastPlacement;
+    const placer = state.players[lp.playerIndex];
+    const name = placer ? placer.name : 'Player';
+    const emoji = placer ? placer.emoji : '';
+    indicator.className = 'bl-round-rank-indicator bl-placement-banner';
+    indicator.innerHTML = '';
+
+    const line1 = document.createElement('div');
+    line1.className = 'bl-banner-who';
+    line1.textContent = `${emoji} ${name}`;
+    indicator.appendChild(line1);
+
+    const line2 = document.createElement('div');
+    line2.className = 'bl-banner-what';
+    line2.textContent = `${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`;
+    indicator.appendChild(line2);
+  } else if (state.currentRank) {
     indicator.className = 'bl-round-rank-indicator bl-round-rank-active';
+    indicator.innerHTML = '';
+    indicator.textContent = `Round: ${state.currentRank}s`;
   } else {
-    indicator.textContent = '🎯 Pick a rank';
     indicator.className = 'bl-round-rank-indicator bl-round-rank-pick';
+    indicator.innerHTML = '';
+    indicator.textContent = '🎯 Pick a rank';
   }
 }
 

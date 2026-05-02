@@ -723,6 +723,13 @@ function handleRemoteUpdate(gameData, lastMove) {
     playSound('capture');
     const passerName = state.players[lastMove.playerIndex]?.name || 'Player';
     setEventMessage(`${passerName} passed`);
+
+    // Check if game ended (previous placer had empty hand, unchallenged)
+    if (state.status === 'finished') {
+      handleWin();
+      return;
+    }
+
     renderUI();
     return;
   }
