@@ -69,24 +69,26 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   if (handArea) {
     const isMyTurn = state.currentPlayerIndex === localPlayerIndex;
     const canSelect = isMyTurn && state.phase === 'placing';
-    const inChallengeWindow = state.phase === 'challengeWindow';
-    renderHand(handArea, state.players[localPlayerIndex].hand, canSelect, inChallengeWindow, callbacks.onReorder);
+    renderHand(handArea, state.players[localPlayerIndex].hand, canSelect, false, callbacks.onReorder);
   }
 
-  // Actions area (place button + pass button)
+  // Actions area — always visible with context-dependent buttons
   if (actionsArea) {
     actionsArea.innerHTML = '';
     const isMyTurn = state.currentPlayerIndex === localPlayerIndex;
+    const canChallenge = state.lastPlacement &&
+      state.lastPlacement.playerIndex !== localPlayerIndex;
 
+    const btnRow = document.createElement('div');
+    btnRow.className = 'bl-action-row';
+
+    // Place Cards button — enabled only on your turn
     if (isMyTurn && state.phase === 'placing') {
-      const btnRow = document.createElement('div');
-      btnRow.className = 'bl-action-row';
-
       const placeBtn = document.createElement('button');
       placeBtn.className = 'btn primary bl-place-btn';
       placeBtn.type = 'button';
       const count = _selectedIndices.size;
-      placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Select Cards to Place';
+      placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Select Cards';
       placeBtn.disabled = count === 0;
       placeBtn.addEventListener('click', () => {
         if (_selectedIndices.size > 0 && _selectedIndices.size <= 4 && callbacks.onPlaceCards) {
@@ -95,7 +97,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
       });
       btnRow.appendChild(placeBtn);
 
-      // Pass button — only when a rank is already set (can't pass if you need to pick a rank)
+      // Pass button — only when a rank is already set
       if (state.currentRank) {
         const passBtn = document.createElement('button');
         passBtn.className = 'btn bl-pass-btn';
@@ -106,9 +108,30 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
         });
         btnRow.appendChild(passBtn);
       }
-
-      actionsArea.appendChild(btnRow);
     }
+
+    // Bluff button — visible when there's a placement to challenge
+    if (canChallenge) {
+      const bluffBtn = document.createElement('button');
+      bluffBtn.className = 'btn primary bl-bluff-btn';
+      bluffBtn.type = 'button';
+      bluffBtn.textContent = '🃏 BLUFF!';
+      bluffBtn.addEventListener('click', () => {
+        if (callbacks.onChallenge) callbacks.onChallenge();
+      });
+      btnRow.appendChild(bluffBtn);
+    }
+
+    // Show waiting message if not your turn and no challenge available
+    if (!isMyTurn && !canChallenge) {
+      const waitText = document.createElement('p');
+      waitText.className = 'bl-wait-text';
+      const currentName = state.players[state.currentPlayerIndex]?.name || 'Opponent';
+      waitText.textContent = `Waiting for ${currentName}...`;
+      btnRow.appendChild(waitText);
+    }
+
+    actionsArea.appendChild(btnRow);
   }
 }
 

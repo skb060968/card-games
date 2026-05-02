@@ -2,8 +2,9 @@
  * Bluff — Main Wiring Module
  *
  * Handles all Bluff game flows: create/join room, lobby,
- * gameplay (place cards, challenge, timer), results, session persistence.
+ * gameplay (place cards, challenge), results, session persistence.
  * Includes card animations, reorder support, and placement overlay.
+ * No timer — Bluff button is available until the next player acts.
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
@@ -12,15 +13,12 @@ import {
   placeCards,
   passCard,
   resolveChallenge,
-  expireChallenge,
   validateState,
   serializeState,
   deserializeState,
 } from './engine.js';
 import {
   renderGameplay,
-  renderChallengeWindow,
-  hideChallengeWindow,
   renderRankSelector,
   hideRankSelector,
   renderChallengeResult,
@@ -68,8 +66,6 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
-let _challengeTimer = null;
-let _challengeCountdownInterval = null;
 let _isAnimating = false;
 let _resultsShown = false;
 
@@ -88,76 +84,9 @@ function loadSession() {
 
 function cleanupAndGoHome() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
-  clearChallengeTimers();
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
   if (goHome) goHome();
-}
-
-/* ======= CHALLENGE TIMER HELPERS ======= */
-
-function clearChallengeTimers() {
-  if (_challengeTimer) { clearTimeout(_challengeTimer); _challengeTimer = null; }
-  if (_challengeCountdownInterval) { clearInterval(_challengeCountdownInterval); _challengeCountdownInterval = null; }
-}
-
-/**
- * Starts the challenge countdown UI and host expiry timer.
- */
-function startChallengeCountdown() {
-  clearChallengeTimers();
-
-  if (!state || state.phase !== 'challengeWindow' || !state.challengeDeadline) return;
-
-  const deadline = state.challengeDeadline;
-  const canChallenge = state.lastPlacement && state.lastPlacement.playerIndex !== playerIndex;
-  const lp = state.lastPlacement;
-  const placer = state.players[lp.playerIndex];
-  const announcement = `${placer.emoji} ${placer.name} placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`;
-
-  // Announce placement via speech
-  speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-
-  // Initial render
-  const remaining = Math.max(0, deadline - Date.now());
-  renderChallengeWindow(remaining, canChallenge, handleChallenge, announcement);
-
-  // Update countdown every 200ms
-  _challengeCountdownInterval = setInterval(() => {
-    const rem = Math.max(0, deadline - Date.now());
-    renderChallengeWindow(rem, canChallenge, handleChallenge, announcement);
-    if (rem <= 0) {
-      clearInterval(_challengeCountdownInterval);
-      _challengeCountdownInterval = null;
-    }
-  }, 200);
-
-  // Host expires the challenge
-  if (isHost) {
-    const delay = Math.max(0, deadline - Date.now());
-    _challengeTimer = setTimeout(async () => {
-      _challengeTimer = null;
-      if (!state || state.phase !== 'challengeWindow') return;
-      try {
-        const newState = expireChallenge(state);
-        state = newState;
-        hideChallengeWindow();
-        clearChallengeTimers();
-
-        await writeFullState(state, { playerIndex: lp.playerIndex, action: 'expire', timestamp: Date.now() });
-
-        if (state.status === 'finished') {
-          handleWin();
-        } else {
-          clearSelection();
-          renderUI();
-        }
-      } catch (err) {
-        console.error('Challenge expiry failed:', err);
-        showToast('Failed to advance turn.');
-      }
-    }, delay + 500); // small buffer to ensure deadline has passed
-  }
 }
 
 /* ======= SPEECH HELPER ======= */
@@ -407,9 +336,8 @@ function setupLobby() {
           }
         } catch (err) { console.error(err); showToast('Failed to load game.'); }
       }
-      if (status === 'lobby') { state = null; clearChallengeTimers(); setupLobby(); }
+      if (status === 'lobby') { state = null; setupLobby(); }
       if (status === 'ended') {
-        clearChallengeTimers();
         if (state) { state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('bl-results'); startReadyListener(); }
       }
     },
@@ -462,22 +390,10 @@ function startGame() {
   showScreen('bl-gameplay');
   const endBtn = document.getElementById('bl-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
-  hideChallengeWindow();
   hideRankSelector();
   clearSelection();
   setEventMessage('');
   renderUI();
-
-  // If rejoining mid-challenge, start the countdown
-  if (state && state.phase === 'challengeWindow' && state.challengeDeadline) {
-    const remaining = state.challengeDeadline - Date.now();
-    if (remaining > 0) {
-      startChallengeCountdown();
-    } else if (isHost) {
-      // Deadline already passed, host should expire
-      handleChallengeExpiry();
-    }
-  }
 }
 
 function renderUI() {
@@ -511,6 +427,14 @@ async function handlePlacement(cardIndices) {
   if (!state || state.phase !== 'placing') return;
   if (state.currentPlayerIndex !== playerIndex) return;
   if (_isAnimating) return;
+
+  // Check if previous placer won (empty hand, not challenged)
+  if (state.lastPlacement && state.lastPlacement.placerEmpty) {
+    state = { ...state, phase: 'finished', status: 'finished', winnerIndex: state.lastPlacement.playerIndex, lastPlacement: null };
+    await writeFullState(state, { playerIndex, action: 'accept', timestamp: Date.now() });
+    handleWin();
+    return;
+  }
 
   warmSpeech();
 
@@ -551,10 +475,8 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
-
-      // Start merged challenge countdown (includes announcement)
-      startChallengeCountdown();
     } catch (err) {
       _isAnimating = false;
       console.error('Placement failed:', err);
@@ -597,10 +519,8 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
-
-      // Start merged challenge countdown (includes announcement)
-      startChallengeCountdown();
     } catch (err) {
       _isAnimating = false;
       console.error('Placement failed:', err);
@@ -621,7 +541,7 @@ async function handlePass() {
     state = newState;
     clearSelection();
 
-    playSound('capture'); // subtle sound for pass
+    playSound('capture');
 
     const lastMove = {
       playerIndex,
@@ -630,6 +550,11 @@ async function handlePass() {
     };
 
     await writeFullState(state, lastMove);
+
+    if (state.status === 'finished') {
+      handleWin();
+      return;
+    }
 
     setEventMessage('You passed');
     renderUI();
@@ -642,11 +567,9 @@ async function handlePass() {
 /* ======= CHALLENGE ======= */
 
 async function handleChallenge() {
-  if (!state || state.phase !== 'challengeWindow') return;
-  if (!state.lastPlacement || state.lastPlacement.playerIndex === playerIndex) return;
+  if (!state || !state.lastPlacement || state.lastPlacement.playerIndex === playerIndex) return;
 
   warmSpeech();
-  clearChallengeTimers();
 
   try {
     const { newState, bluffCaught, revealedCards } = resolveChallenge(state, playerIndex);
@@ -678,8 +601,6 @@ async function handleChallenge() {
 
     await writeFullState(state, lastMove);
 
-    hideChallengeWindow();
-
     // Show result overlay
     await renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName);
 
@@ -704,36 +625,9 @@ async function handleChallenge() {
   }
 }
 
-async function handleChallengeExpiry() {
-  if (!state || state.phase !== 'challengeWindow') return;
-  clearChallengeTimers();
-
-  try {
-    const lp = state.lastPlacement;
-    const newState = expireChallenge(state);
-    state = newState;
-    hideChallengeWindow();
-
-    await writeFullState(state, { playerIndex: lp ? lp.playerIndex : 0, action: 'expire', timestamp: Date.now() });
-
-    if (state.status === 'finished') {
-      handleWin();
-    } else {
-      clearSelection();
-      renderUI();
-    }
-  } catch (err) {
-    console.error('Challenge expiry failed:', err);
-    showToast('Failed to advance turn.');
-  }
-}
-
 /* ======= WIN HANDLING ======= */
 
 async function handleWin() {
-  clearChallengeTimers();
-  hideChallengeWindow();
-
   if (_resultsShown) { renderResults(state); showScreen('bl-results'); return; }
   _resultsShown = true;
 
@@ -768,8 +662,6 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   // Detect challenge resolution from remote
   if (lastMove && lastMove.action === 'challenge' && lastMove.playerIndex !== playerIndex) {
-    clearChallengeTimers();
-    hideChallengeWindow();
 
     const oldLastPlacement = state ? state.lastPlacement : null;
     const revealedCards = oldLastPlacement ? oldLastPlacement.actualCards : [];
@@ -802,41 +694,24 @@ function handleRemoteUpdate(gameData, lastMove) {
     return;
   }
 
-  // Detect challenge expiry from remote
-  if (lastMove && lastMove.action === 'expire') {
-    clearChallengeTimers();
-    hideChallengeWindow();
-    state = newState;
-
-    if (state.status === 'finished') {
-      handleWin();
-      return;
-    }
-
-    setEventMessage('No challenge — turn advances.');
-    clearSelection();
-    renderUI();
-    return;
-  }
-
   // Detect placement from remote (another player placed cards)
   if (lastMove && lastMove.action === 'place' && lastMove.playerIndex !== playerIndex) {
     state = newState;
     clearSelection();
     playSound('throw');
 
+    // Announce what was placed
+    const lp = state.lastPlacement;
+    if (lp) {
+      const placer = state.players[lp.playerIndex];
+      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      setEventMessage(`${placer?.emoji || ''} ${placer?.name || 'Player'} placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+    }
+
     // Animate remote placement: card-back from opponent block to pile
     const opponentIdx = lastMove.playerIndex;
     animateRemotePlacement(opponentIdx).then(() => {
       renderUI();
-
-      // Start challenge countdown directly (merged UI includes announcement)
-      if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-        const remaining = state.challengeDeadline - Date.now();
-        if (remaining > 0) {
-          startChallengeCountdown();
-        }
-      }
     });
     return;
   }
@@ -861,17 +736,6 @@ function handleRemoteUpdate(gameData, lastMove) {
     return;
   }
 
-  // If in challenge window, ensure countdown is running
-  if (state.phase === 'challengeWindow' && state.challengeDeadline) {
-    const remaining = state.challengeDeadline - Date.now();
-    if (remaining > 0 && !_challengeCountdownInterval) {
-      startChallengeCountdown();
-    }
-  } else {
-    clearChallengeTimers();
-    hideChallengeWindow();
-  }
-
   clearSelection();
   renderUI();
 }
@@ -883,8 +747,6 @@ function wireEndGame() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     if (!state) return;
-    clearChallengeTimers();
-    hideChallengeWindow();
     state.status = 'finished'; state.winnerIndex = null;
     if (roomCode) { try { await endRoom(GAME_ID, roomCode); } catch (_) {} }
     renderResults(state);
@@ -1003,8 +865,8 @@ export async function checkBluffSession() {
       unsubscribeRoom = listenRoom(GAME_ID, roomCode, {
         onPlayersChange: (players) => { const keys = Object.keys(players).sort(); playerNames = keys.map((k) => players[k].name || 'Unknown'); },
         onStatusChange: async (s) => {
-          if (s === 'lobby') { state = null; clearChallengeTimers(); setupLobby(); }
-          if (s === 'ended' && state) { clearChallengeTimers(); state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('bl-results'); startReadyListener(); }
+          if (s === 'lobby') { state = null; setupLobby(); }
+          if (s === 'ended' && state) { state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('bl-results'); startReadyListener(); }
         },
         onGameUpdate: (gd, lm) => { handleRemoteUpdate(gd, lm); },
         onRoomDeleted: () => { showToast('Host has left. Room closed.', 3000); cleanupAndGoHome(); },

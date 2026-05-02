@@ -4,6 +4,11 @@
  * Pure game logic: create, place cards, challenge resolution,
  * turn management, win detection, validation, serialization.
  * No DOM or Firebase dependencies.
+ *
+ * Flow: Player places cards → turn advances to next player immediately.
+ * Any non-placer can press Bluff before the next player acts.
+ * Once the next player places or passes, the previous placement
+ * can no longer be challenged.
  */
 
 import { createDeck, shuffle, dealCards, serializeCard, deserializeCard } from '../../shared/deck.js';
@@ -11,13 +16,11 @@ import { createDeck, shuffle, dealCards, serializeCard, deserializeCard } from '
 /* ======= CONSTANTS ======= */
 
 const VALID_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const CHALLENGE_WINDOW_MS = 10000; // 10 seconds
 
 /* ======= GAME CREATION ======= */
 
 /**
  * Creates initial Bluff game state.
- * Shuffles a 52-card deck, deals equally, discards remainder.
  * @param {Array<{name: string, emoji: string}>} playerInfos — 2 to 4 players
  * @returns {object} GameState
  */
@@ -29,7 +32,6 @@ export function createGame(playerInfos) {
 
   const deck = createDeck();
   shuffle(deck);
-
   const hands = dealCards(deck, n);
 
   const players = playerInfos.map((info, i) => ({
@@ -45,7 +47,6 @@ export function createGame(playerInfos) {
     currentPlayerIndex: 0,
     phase: 'placing',
     lastPlacement: null,
-    challengeDeadline: null,
     status: 'playing',
     winnerIndex: null,
     deckSize: 52,
@@ -59,12 +60,12 @@ export function createGame(playerInfos) {
 
 /**
  * Places 1–4 cards from the active player's hand onto the center pile.
- * Stores actual cards and declared rank separately.
- * Transitions to challengeWindow phase.
+ * Advances turn to next player immediately. lastPlacement is kept
+ * so other players can challenge before the next player acts.
  * @param {object} state
- * @param {number[]} cardIndices — indices into active player's hand (1–4 cards)
- * @param {string} declaredRank — one of A,2,3,...,K
- * @returns {object} new GameState with phase 'challengeWindow'
+ * @param {number[]} cardIndices
+ * @param {string} declaredRank
+ * @returns {object} new GameState
  */
 export function placeCards(state, cardIndices, declaredRank) {
   if (state.phase !== 'placing') {
@@ -102,7 +103,6 @@ export function placeCards(state, cardIndices, declaredRank) {
   // Extract actual cards and remove from hand
   const actualCards = cardIndices.map((idx) => player.hand[idx]);
   const newHand = [...player.hand];
-  // Remove from highest index first to preserve lower indices
   for (const idx of uniqueIndices) {
     newHand.splice(idx, 1);
   }
@@ -114,10 +114,8 @@ export function placeCards(state, cardIndices, declaredRank) {
     return { ...p };
   });
 
-  // Set currentRank if this is the first placement of the round
   const newCurrentRank = state.currentRank || declaredRank;
 
-  // Track that this player has acted this round
   const newPlayersActed = state.playersActedThisRound
     ? [...state.playersActedThisRound]
     : [];
@@ -125,18 +123,25 @@ export function placeCards(state, cardIndices, declaredRank) {
     newPlayersActed.push(playerIdx);
   }
 
+  const numPlayers = state.players.length;
+  const nextPlayer = (playerIdx + 1) % numPlayers;
+
+  // Check if placer's hand is empty — potential win (can still be challenged)
+  const placerEmpty = newHand.length === 0;
+
   return {
     ...state,
     players: newPlayers,
     centerPile: newCenterPile,
-    phase: 'challengeWindow',
+    phase: 'placing',
+    currentPlayerIndex: nextPlayer,
     lastPlacement: {
       playerIndex: playerIdx,
       actualCards,
       declaredRank,
       count: actualCards.length,
+      placerEmpty,
     },
-    challengeDeadline: Date.now() + CHALLENGE_WINDOW_MS,
     currentRank: newCurrentRank,
     roundStartPlayer: state.currentRank ? state.roundStartPlayer : playerIdx,
     playersActedThisRound: newPlayersActed,
@@ -146,10 +151,9 @@ export function placeCards(state, cardIndices, declaredRank) {
 /* ======= PASS TURN ======= */
 
 /**
- * Current player passes their turn (places no cards).
- * Adds player to playersActedThisRound, advances turn.
- * If all players have acted, resets the round.
- * @param {object} state — must be in placing phase
+ * Current player passes their turn. Clears lastPlacement (no more challenge).
+ * Checks if previous placer won (empty hand, unchallenged).
+ * @param {object} state
  * @returns {object} new GameState
  */
 export function passCard(state) {
@@ -161,10 +165,20 @@ export function passCard(state) {
     throw new Error('Cannot pass: you must pick a rank first (no current rank set)');
   }
 
+  // Check if previous placer had empty hand (unchallenged win)
+  if (state.lastPlacement && state.lastPlacement.placerEmpty) {
+    return {
+      ...state,
+      phase: 'finished',
+      status: 'finished',
+      winnerIndex: state.lastPlacement.playerIndex,
+      lastPlacement: null,
+    };
+  }
+
   const playerIdx = state.currentPlayerIndex;
   const numPlayers = state.players.length;
 
-  // Track that this player has acted this round
   const newPlayersActed = state.playersActedThisRound
     ? [...state.playersActedThisRound]
     : [];
@@ -172,17 +186,15 @@ export function passCard(state) {
     newPlayersActed.push(playerIdx);
   }
 
-  // Check if round is complete (all players have acted)
   const roundComplete = newPlayersActed.length >= numPlayers;
-
   const nextPlayer = (playerIdx + 1) % numPlayers;
 
   if (roundComplete) {
-    // Round over — reset rank, next player picks a new rank
     return {
       ...state,
       currentPlayerIndex: nextPlayer,
       phase: 'placing',
+      lastPlacement: null,
       currentRank: null,
       roundStartPlayer: nextPlayer,
       playersActedThisRound: [],
@@ -193,6 +205,7 @@ export function passCard(state) {
     ...state,
     currentPlayerIndex: nextPlayer,
     phase: 'placing',
+    lastPlacement: null,
     playersActedThisRound: newPlayersActed,
   };
 }
@@ -201,17 +214,12 @@ export function passCard(state) {
 
 /**
  * Resolves a challenge against the most recent placement.
- * Reveals actual cards, compares to declared rank.
- * Assigns entire center pile to the loser.
- * @param {object} state — must be in challengeWindow phase
- * @param {number} challengerIndex — index of the challenging player
+ * Can be called anytime lastPlacement exists and challenger is not the placer.
+ * @param {object} state
+ * @param {number} challengerIndex
  * @returns {{ newState: object, bluffCaught: boolean, revealedCards: Array }}
  */
 export function resolveChallenge(state, challengerIndex) {
-  if (state.phase !== 'challengeWindow') {
-    throw new Error('Cannot resolve challenge: not in challengeWindow phase');
-  }
-
   if (!state.lastPlacement) {
     throw new Error('No placement to challenge');
   }
@@ -229,10 +237,8 @@ export function resolveChallenge(state, challengerIndex) {
   const { actualCards, declaredRank } = state.lastPlacement;
   const revealedCards = [...actualCards];
 
-  // Check if any actual card doesn't match the declared rank
   const bluffCaught = actualCards.some((card) => card.rank !== declaredRank);
 
-  // Loser takes the entire center pile
   const loserIndex = bluffCaught ? placerIndex : challengerIndex;
   const pileCards = [...state.centerPile];
 
@@ -243,7 +249,6 @@ export function resolveChallenge(state, challengerIndex) {
     return { ...p };
   });
 
-  // Advance turn to next player after the placer
   const nextPlayer = (placerIndex + 1) % state.players.length;
 
   return {
@@ -254,75 +259,13 @@ export function resolveChallenge(state, challengerIndex) {
       currentPlayerIndex: nextPlayer,
       phase: 'placing',
       lastPlacement: null,
-      challengeDeadline: null,
       status: 'playing',
-      // Challenge breaks the round — next player picks a new rank
       currentRank: null,
       roundStartPlayer: nextPlayer,
       playersActedThisRound: [],
     },
     bluffCaught,
     revealedCards,
-  };
-}
-
-/* ======= CHALLENGE EXPIRY ======= */
-
-/**
- * Expires the challenge window without a challenge.
- * Advances turn to next player. Checks win condition if placer's hand is empty.
- * @param {object} state — must be in challengeWindow phase
- * @returns {object} GameState
- */
-export function expireChallenge(state) {
-  if (state.phase !== 'challengeWindow') {
-    throw new Error('Cannot expire challenge: not in challengeWindow phase');
-  }
-
-  const placerIndex = state.lastPlacement ? state.lastPlacement.playerIndex : state.currentPlayerIndex;
-  const placer = state.players[placerIndex];
-
-  // If placer's hand is empty, they win
-  if (placer.hand.length === 0) {
-    return {
-      ...state,
-      phase: 'finished',
-      status: 'finished',
-      winnerIndex: placerIndex,
-      lastPlacement: null,
-      challengeDeadline: null,
-    };
-  }
-
-  const numPlayers = state.players.length;
-  const playersActed = state.playersActedThisRound || [];
-
-  // Check if round is complete (all players have acted)
-  const roundComplete = playersActed.length >= numPlayers;
-
-  // Advance turn to next player after the placer
-  const nextPlayer = (placerIndex + 1) % numPlayers;
-
-  if (roundComplete) {
-    // Round over — reset rank, next player picks a new rank
-    return {
-      ...state,
-      currentPlayerIndex: nextPlayer,
-      phase: 'placing',
-      lastPlacement: null,
-      challengeDeadline: null,
-      currentRank: null,
-      roundStartPlayer: nextPlayer,
-      playersActedThisRound: [],
-    };
-  }
-
-  return {
-    ...state,
-    currentPlayerIndex: nextPlayer,
-    phase: 'placing',
-    lastPlacement: null,
-    challengeDeadline: null,
   };
 }
 
@@ -339,9 +282,6 @@ export function validateState(state) {
     total += player.hand.length;
   }
 
-  // Count cards in lastPlacement.actualCards only if they are NOT already in centerPile
-  // (they should already be in centerPile after placeCards, so no double-counting needed)
-
   if (total !== 52) {
     return { valid: false, error: `Card count mismatch: expected 52, found ${total}` };
   }
@@ -353,7 +293,7 @@ export function validateState(state) {
 /**
  * Serializes game state for Firebase storage.
  * @param {object} state
- * @returns {object} Firebase-compatible plain object
+ * @returns {object}
  */
 export function serializeState(state) {
   const hands = {};
@@ -372,6 +312,7 @@ export function serializeState(state) {
       actualCards: state.lastPlacement.actualCards.map(serializeCard),
       declaredRank: state.lastPlacement.declaredRank,
       count: state.lastPlacement.count,
+      placerEmpty: state.lastPlacement.placerEmpty || false,
     };
   }
 
@@ -385,7 +326,6 @@ export function serializeState(state) {
     hands,
     handCounts,
     lastPlacement,
-    challengeDeadline: state.challengeDeadline,
     currentRank: state.currentRank || null,
     roundStartPlayer: state.roundStartPlayer || 0,
     playersActedThisRound: state.playersActedThisRound || [],
@@ -394,9 +334,9 @@ export function serializeState(state) {
 
 /**
  * Deserializes game state from Firebase data.
- * @param {object} gameData — serialized game data from Firebase
- * @param {object} playersData — player info from Firebase
- * @returns {object} GameState
+ * @param {object} gameData
+ * @param {object} playersData
+ * @returns {object}
  */
 export function deserializeState(gameData, playersData) {
   const playerKeys = Object.keys(playersData).sort();
@@ -433,6 +373,7 @@ export function deserializeState(gameData, playersData) {
       actualCards,
       declaredRank: lp.declaredRank,
       count: lp.count,
+      placerEmpty: lp.placerEmpty || false,
     };
   }
 
@@ -442,7 +383,6 @@ export function deserializeState(gameData, playersData) {
     currentPlayerIndex: gameData.currentPlayerIndex || 0,
     phase: gameData.phase || 'placing',
     lastPlacement,
-    challengeDeadline: gameData.challengeDeadline || null,
     status: gameData.status || 'playing',
     winnerIndex: gameData.winnerIndex != null ? gameData.winnerIndex : null,
     deckSize: gameData.deckSize || 52,
