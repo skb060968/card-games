@@ -1626,6 +1626,14 @@ body {
   width: 100%;
 }
 
+.bl-sort-btn {
+  max-width: 160px;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
 .bl-pass-btn {
   max-width: 140px;
   font-size: 0.95rem;

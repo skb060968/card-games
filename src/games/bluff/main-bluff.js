@@ -403,6 +403,7 @@ function renderUI() {
     onChallenge: () => handleChallenge(),
     onPass: () => handlePass(),
     onReorder: (from, to) => handleReorder(from, to),
+    onSort: () => handleSort(),
   });
 }
 
@@ -418,6 +419,28 @@ function handleReorder(fromIndex, toIndex) {
     return { ...p };
   });
   state = { ...state, players: newPlayers };
+  renderUI();
+}
+
+/* ======= SORT ======= */
+
+const RANK_ORDER = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+const SUIT_ORDER = { '♠': 0, '♥': 1, '♦': 2, '♣': 3 };
+
+function handleSort() {
+  if (!state || playerIndex == null) return;
+  const hand = [...state.players[playerIndex].hand];
+  hand.sort((a, b) => {
+    const rankDiff = (RANK_ORDER[a.rank] || 0) - (RANK_ORDER[b.rank] || 0);
+    if (rankDiff !== 0) return rankDiff;
+    return (SUIT_ORDER[a.suit] || 0) - (SUIT_ORDER[b.suit] || 0);
+  });
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+  clearSelection();
   renderUI();
 }
 
