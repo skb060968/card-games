@@ -14,6 +14,10 @@ import { createDeck, shuffle, dealCards } from '../../shared/deck.js';
  * @returns {object} GameState
  */
 export function createGame(playerInfos, deckCount = 1) {
+  if (playerInfos.length < 2 || playerInfos.length > 4) {
+    throw new Error(`Invalid player count: ${playerInfos.length}. Must be 2-4 players.`);
+  }
+
   let deck = createDeck();
   if (deckCount === 2) {
     deck = [...deck, ...createDeck()];

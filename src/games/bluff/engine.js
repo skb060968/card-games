@@ -34,6 +34,11 @@ export function createGame(playerInfos) {
   shuffle(deck);
   const hands = dealCards(deck, n);
 
+  // Remainder cards (e.g., 52 % 3 = 1 card) go to center pile
+  const cardsPerPlayer = Math.floor(deck.length / n);
+  const totalDealt = cardsPerPlayer * n;
+  const remainder = deck.slice(totalDealt);
+
   const players = playerInfos.map((info, i) => ({
     name: info.name,
     emoji: info.emoji,
@@ -43,7 +48,7 @@ export function createGame(playerInfos) {
 
   return {
     players,
-    centerPile: [],
+    centerPile: remainder,
     currentPlayerIndex: 0,
     phase: 'placing',
     lastPlacement: null,
