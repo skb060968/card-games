@@ -183,18 +183,10 @@ export function passCard(state) {
 
   const playerIdx = state.currentPlayerIndex;
   const numPlayers = state.players.length;
-
-  const newPlayersActed = state.playersActedThisRound
-    ? [...state.playersActedThisRound]
-    : [];
-  if (!newPlayersActed.includes(playerIdx)) {
-    newPlayersActed.push(playerIdx);
-  }
-
-  const roundComplete = newPlayersActed.length >= numPlayers;
   const nextPlayer = (playerIdx + 1) % numPlayers;
 
-  if (roundComplete) {
+  // Round resets when the round starter passes (they don't want to continue this rank)
+  if (playerIdx === state.roundStartPlayer) {
     return {
       ...state,
       currentPlayerIndex: nextPlayer,
@@ -211,7 +203,6 @@ export function passCard(state) {
     currentPlayerIndex: nextPlayer,
     phase: 'placing',
     lastPlacement: null,
-    playersActedThisRound: newPlayersActed,
   };
 }
 

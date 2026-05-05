@@ -325,6 +325,8 @@ function renderUI() {
     onDiscardPileTap: () => handleDraw('discardPile'),
     onHandCardTap: (idx) => handleDiscard(idx),
     onReorder: (from, to) => handleReorder(from, to),
+    onSortByRank: () => handleSortByRank(),
+    onSortBySuit: () => handleSortBySuit(),
   });
 }
 
@@ -335,6 +337,8 @@ function renderGameplayWithState(s) {
     onDiscardPileTap: () => handleDraw('discardPile'),
     onHandCardTap: (idx) => handleDiscard(idx),
     onReorder: (from, to) => handleReorder(from, to),
+    onSortByRank: () => handleSortByRank(),
+    onSortBySuit: () => handleSortBySuit(),
   });
 }
 
@@ -348,6 +352,43 @@ function handleReorder(fromIndex, toIndex) {
     return { ...p };
   });
   state = { ...state, players: newPlayers };
+  renderUI();
+}
+
+const SR_RANK_ORDER = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+const SR_SUIT_ORDER = { '♠': 0, '♥': 1, '♦': 2, '♣': 3 };
+
+function handleSortByRank() {
+  if (!state || playerIndex == null) return;
+  const hand = [...state.players[playerIndex].hand];
+  hand.sort((a, b) => {
+    const rankDiff = (SR_RANK_ORDER[a.rank] || 0) - (SR_RANK_ORDER[b.rank] || 0);
+    if (rankDiff !== 0) return rankDiff;
+    return (SR_SUIT_ORDER[a.suit] || 0) - (SR_SUIT_ORDER[b.suit] || 0);
+  });
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+  clearSelection();
+  renderUI();
+}
+
+function handleSortBySuit() {
+  if (!state || playerIndex == null) return;
+  const hand = [...state.players[playerIndex].hand];
+  hand.sort((a, b) => {
+    const suitDiff = (SR_SUIT_ORDER[a.suit] || 0) - (SR_SUIT_ORDER[b.suit] || 0);
+    if (suitDiff !== 0) return suitDiff;
+    return (SR_RANK_ORDER[a.rank] || 0) - (SR_RANK_ORDER[b.rank] || 0);
+  });
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+  clearSelection();
   renderUI();
 }
 
@@ -793,7 +834,6 @@ function wireResults() {
     if (roomCode) {
       if (playerIndex != null) { try { await update(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/ready`), { [`player_${playerIndex}`]: 'left' }); } catch (_) {} }
       if (isHost) { try { await deleteRoom(GAME_ID, roomCode); } catch (_) {} }
-      else if (playerIndex != null) { try { await remove(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/players/player_${playerIndex}`)); } catch (_) {} }
     }
     cleanupAndGoHome();
   });

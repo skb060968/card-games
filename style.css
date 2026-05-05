@@ -1187,12 +1187,21 @@ body {
 .sr-hand-area {
   width: 100%;
   display: flex;
-  justify-content: center;
-  padding: 8px 0 16px;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 8px;
   overflow: visible;
   /* Smaller cards for rummy hand to fit 11 cards on mobile */
   --sr-card-w: 46px;
   --sr-card-h: 64px;
+}
+
+/* Sort buttons row below hand */
+.sr-sort-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px 0 8px;
 }
 
 .sr-arc {

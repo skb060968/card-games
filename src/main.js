@@ -803,11 +803,6 @@ function wireResults() {
 
       if (isHost) {
         try { await deleteRoom(GAME_ID, roomCode); } catch (_) {}
-      } else if (playerIndex != null) {
-        try {
-          const playerRef = ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/players/player_${playerIndex}`);
-          await remove(playerRef);
-        } catch (_) {}
       }
     }
 

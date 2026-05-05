@@ -15,7 +15,7 @@ import { calculatePot, getPlayerMetric, renderPotDisplay } from '../../shared/wi
  * Layout: all-players bar → piles → local hand → self bar
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
- * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap, onReorder }
+ * @param {object} callbacks - { onDrawPileTap, onDiscardPileTap, onHandCardTap, onReorder, onSortByRank, onSortBySuit }
  */
 export function renderGameplay(state, localPlayerIndex, callbacks) {
   const allPlayersEl = document.getElementById('sr-all-players');
@@ -39,6 +39,30 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   // Local hand — arc/inverted-U layout
   const isMyDiscardPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'discard';
   renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onReorder);
+
+  // Sort buttons below hand
+  let sortRow = document.getElementById('sr-sort-row');
+  if (!sortRow) {
+    sortRow = document.createElement('div');
+    sortRow.id = 'sr-sort-row';
+    sortRow.className = 'sr-sort-row';
+    handArea.parentNode.insertBefore(sortRow, handArea.nextSibling);
+  }
+  sortRow.innerHTML = '';
+
+  const rankBtn = document.createElement('button');
+  rankBtn.className = 'btn secondary bl-sort-btn';
+  rankBtn.type = 'button';
+  rankBtn.textContent = '🔤 Sort Rank';
+  rankBtn.addEventListener('click', () => { if (callbacks.onSortByRank) callbacks.onSortByRank(); });
+  sortRow.appendChild(rankBtn);
+
+  const suitBtn = document.createElement('button');
+  suitBtn.className = 'btn secondary bl-sort-btn';
+  suitBtn.type = 'button';
+  suitBtn.textContent = '♠ Sort Suit';
+  suitBtn.addEventListener('click', () => { if (callbacks.onSortBySuit) callbacks.onSortBySuit(); });
+  sortRow.appendChild(suitBtn);
 }
 
 /* ======= ALL-PLAYERS BAR ======= */

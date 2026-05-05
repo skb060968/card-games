@@ -74,7 +74,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
 
   // Local hand — arc layout
   const isMyDiscardPhase = state.currentPlayerIndex === localPlayerIndex && state.turnPhase === 'discard';
-  renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onReorder);
+  renderArcHand(handArea, state.players[localPlayerIndex].hand, isMyDiscardPhase, callbacks.onHandCardTap, callbacks.onSort);
 }
 
 /* ======= ALL-PLAYERS BAR ======= */
@@ -186,7 +186,7 @@ export function renderOpponentRankCount(hand) {
  * Renders the local player's hand in an inverted-U arc layout.
  * Two-tap discard: first tap selects, second tap confirms.
  */
-function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
+function renderArcHand(container, hand, canDiscard, onCardTap, onSort) {
   container.innerHTML = '';
 
   const arc = document.createElement('div');
@@ -196,7 +196,7 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
   const maxAngle = 30;
   const maxLift = 20;
 
-  // Dynamic card sizing: fit all cards within container width
+  // Dynamic card sizing
   const containerWidth = container.offsetWidth || 360;
   const padding = 16;
   const availableWidth = containerWidth - padding;
@@ -236,7 +236,6 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
     const lift = (1 - t * t) * maxLift;
     let extraLift = 0;
 
-    // Newly drawn card highlight
     if (i === _newlyDrawnIndex) {
       cardEl.classList.add('sr-card-new');
     }
@@ -257,37 +256,30 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onReorder) {
           onCardTap(i);
         } else {
           _selectedForDiscard = i;
-          renderArcHand(container, hand, canDiscard, onCardTap, onReorder);
+          renderArcHand(container, hand, canDiscard, onCardTap, onSort);
         }
       });
     } else {
-      // Reorder mode: tap to select, tap another position to move
-      cardEl.style.cursor = 'pointer';
-
-      if (_selectedForMove === i) {
-        cardEl.classList.add('sr-card-selected');
-        extraLift = 18;
-      }
-
-      cardEl.addEventListener('click', () => {
-        if (_selectedForMove === null || _selectedForMove === i) {
-          _selectedForMove = _selectedForMove === i ? null : i;
-          renderArcHand(container, hand, canDiscard, onCardTap, onReorder);
-        } else {
-          const from = _selectedForMove;
-          _selectedForMove = null;
-          if (onReorder) onReorder(from, i);
-        }
-      });
+      cardEl.style.cursor = 'default';
     }
 
     cardEl.style.transform = `translateY(${-lift - extraLift}px) rotate(${angle}deg)`;
-    cardEl.style.zIndex = _selectedForDiscard === i || _selectedForMove === i ? '20' : String(i);
+    cardEl.style.zIndex = _selectedForDiscard === i ? '20' : String(i);
 
     arc.appendChild(cardEl);
   });
 
   container.appendChild(arc);
+
+  // Sort button below hand
+  const sortBtn = document.createElement('button');
+  sortBtn.className = 'btn secondary bl-sort-btn';
+  sortBtn.type = 'button';
+  sortBtn.textContent = '🔤 Sort by Rank';
+  sortBtn.addEventListener('click', () => {
+    if (onSort) onSort();
+  });
+  container.appendChild(sortBtn);
 }
 
 /* ======= PILES ======= */

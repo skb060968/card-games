@@ -820,7 +820,6 @@ function wireResults() {
     if (roomCode) {
       if (playerIndex != null) { try { await update(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/ready`), { [`player_${playerIndex}`]: 'left' }); } catch (_) {} }
       if (isHost) { try { await deleteRoom(GAME_ID, roomCode); } catch (_) {} }
-      else if (playerIndex != null) { try { await remove(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/players/player_${playerIndex}`)); } catch (_) {} }
     }
     cleanupAndGoHome();
   });
