@@ -2152,6 +2152,14 @@ body {
   border-radius: 10px;
   background: rgba(255,255,255,0.06);
   border: 1px dashed rgba(255,255,255,0.15);
+  transition: box-shadow 0.3s, border-color 0.3s, background 0.3s;
+}
+
+.game-self-bar.self-bar-active {
+  box-shadow: 0 0 10px rgba(243,156,18,0.6), 0 0 20px rgba(243,156,18,0.2);
+  border-color: var(--color-accent);
+  border-style: solid;
+  background: rgba(243,156,18,0.08);
 }
 
 .game-self-info {

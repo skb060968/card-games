@@ -112,11 +112,15 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 function renderSelfBar(state, localPlayerIndex) {
   const emojiEl = document.getElementById('sr-self-emoji');
   const nameEl = document.getElementById('sr-self-name');
+  const selfBar = document.getElementById('sr-self-bar');
   if (!emojiEl || !nameEl) return;
   const self = state.players[localPlayerIndex];
   if (!self) return;
   emojiEl.textContent = self.emoji;
   nameEl.textContent = self.name;
+  if (selfBar) {
+    selfBar.classList.toggle('self-bar-active', state.currentPlayerIndex === localPlayerIndex);
+  }
 }
 
 /* ======= ARC HAND (Inverted-U) ======= */

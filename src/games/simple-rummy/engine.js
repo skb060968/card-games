@@ -185,11 +185,26 @@ export function discardCard(state, handIndex) {
   // Advance turn
   const nextPlayer = (playerIdx + 1) % state.players.length;
 
+  let finalDrawPile = state.drawPile;
+  let finalDiscardPile = newDiscardPile;
+
+  // Auto-reshuffle if draw pile is empty — do it now so next player sees cards available
+  if (finalDrawPile.length === 0 && finalDiscardPile.length > 1) {
+    const reshuffled = reshuffleDiscardPile({
+      ...state,
+      drawPile: finalDrawPile,
+      discardPile: finalDiscardPile,
+    });
+    finalDrawPile = reshuffled.drawPile;
+    finalDiscardPile = reshuffled.discardPile;
+  }
+
   return {
     newState: {
       ...state,
       players: newPlayers,
-      discardPile: newDiscardPile,
+      drawPile: finalDrawPile,
+      discardPile: finalDiscardPile,
       currentPlayerIndex: nextPlayer,
       turnPhase: 'draw',
     },
