@@ -101,11 +101,15 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 function renderSelfBar(state, localPlayerIndex) {
   const emojiEl = document.getElementById('pk-self-emoji');
   const nameEl = document.getElementById('pk-self-name');
+  const selfBar = document.getElementById('pk-self-bar');
   if (!emojiEl || !nameEl) return;
   const self = state.players[localPlayerIndex];
   if (!self) return;
   emojiEl.textContent = self.emoji;
   nameEl.textContent = self.name;
+  if (selfBar) {
+    selfBar.classList.toggle('self-bar-active', state.currentPlayerIndex === localPlayerIndex);
+  }
 }
 
 /**

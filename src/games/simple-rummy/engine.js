@@ -83,7 +83,7 @@ export function drawCard(state, source) {
   let newDrawPile = [...state.drawPile];
   let newDiscardPile = [...state.discardPile];
 
-  // Auto-reshuffle if draw pile empty (regardless of source)
+  // Auto-reshuffle if draw pile empty BEFORE drawing (regardless of source)
   if (newDrawPile.length === 0 && newDiscardPile.length > 1) {
     const reshuffled = reshuffleDiscardPile({
       ...state,
@@ -123,6 +123,18 @@ export function drawCard(state, source) {
     }
     return { ...p };
   });
+
+  // Auto-reshuffle AFTER drawing if draw pile is now empty
+  // This ensures the draw pile is refilled for the discard phase UI
+  if (newDrawPile.length === 0 && newDiscardPile.length > 1) {
+    const reshuffled = reshuffleDiscardPile({
+      ...state,
+      drawPile: newDrawPile,
+      discardPile: newDiscardPile,
+    });
+    newDrawPile = reshuffled.drawPile;
+    newDiscardPile = reshuffled.discardPile;
+  }
 
   return {
     ...state,
