@@ -1303,7 +1303,7 @@ body {
 
 /* Gameplay layout */
 #bl-gameplay {
-  gap: var(--gap-sm);
+  gap: 4px;
   padding: 4px 8px;
   min-height: 100svh;
   justify-content: space-between;
@@ -1314,8 +1314,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-sm);
-  padding: 8px 0;
+  gap: 4px;
+  padding: 4px 0;
 }
 
 .bl-pile-card {
@@ -1327,8 +1327,10 @@ body {
 /* Actions area */
 .bl-actions-area {
   display: flex;
-  justify-content: center;
-  padding: 4px 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
 }
 
 .bl-place-btn {
@@ -1581,11 +1583,11 @@ body {
 /* Round rank indicator */
 .bl-round-rank-indicator {
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  padding: 6px 16px;
+  padding: 4px 14px;
   border-radius: 10px;
-  margin: 0 auto 4px;
+  margin: 0 auto 2px;
   max-width: 220px;
   letter-spacing: 0.5px;
 }
@@ -1607,19 +1609,19 @@ body {
 .bl-placement-banner {
   background: linear-gradient(180deg, rgba(243,156,18,0.25) 0%, rgba(243,156,18,0.1) 100%);
   border: 2px solid rgba(243,156,18,0.5);
-  padding: 8px 20px;
+  padding: 5px 18px;
   max-width: 260px;
   box-shadow: 0 0 12px rgba(243,156,18,0.2);
 }
 
 .bl-banner-who {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--color-text-light);
   opacity: 0.9;
 }
 
 .bl-banner-what {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 900;
   color: var(--color-accent);
   letter-spacing: 1px;
@@ -2142,38 +2144,41 @@ body {
   margin-left: 0;
 }
 
-/* Self info bar at bottom */
+/* Self info bar at bottom — styled to mirror opponent player blocks */
 .game-self-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 6px 8px;
+  padding: 5px 10px;
   border-radius: 10px;
   background: rgba(255,255,255,0.06);
-  border: 1px dashed rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.1);
   transition: box-shadow 0.3s, border-color 0.3s, background 0.3s;
 }
 
 .game-self-bar.self-bar-active {
-  box-shadow: 0 0 10px rgba(243,156,18,0.6), 0 0 20px rgba(243,156,18,0.2);
+  box-shadow: 0 0 12px rgba(243,156,18,0.7), 0 0 24px rgba(243,156,18,0.3);
   border-color: var(--color-accent);
-  border-style: solid;
-  background: rgba(243,156,18,0.08);
+  background: rgba(243,156,18,0.12);
+}
+
+.game-self-bar.self-bar-active .game-self-name {
+  color: var(--color-accent);
 }
 
 .game-self-info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .game-self-emoji {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
 }
 
 .game-self-name {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 

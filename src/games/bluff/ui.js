@@ -205,7 +205,8 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 }
 
 /**
- * Renders the self bar at the bottom with emoji and name.
+ * Renders the self bar at the bottom with emoji, name, heap & card count.
+ * Mirrors the opponent player-block layout at top for visual consistency.
  */
 function renderSelfBar(state, localPlayerIndex) {
   const emojiEl = document.getElementById('bl-self-emoji');
@@ -218,6 +219,42 @@ function renderSelfBar(state, localPlayerIndex) {
   nameEl.textContent = self.name;
   if (selfBar) {
     selfBar.classList.toggle('self-bar-active', state.currentPlayerIndex === localPlayerIndex);
+  }
+
+  // Render heap + count in the self-info group (matches opponent block visual)
+  const infoEl = selfBar ? selfBar.querySelector('.game-self-info') : null;
+  if (infoEl) {
+    // Remove old heap if present
+    const oldHeap = infoEl.querySelector('.bl-heap-wrap');
+    if (oldHeap) oldHeap.remove();
+
+    const count = self.hand ? self.hand.length : 0;
+    const heapWrap = document.createElement('div');
+    heapWrap.className = 'bl-heap-wrap';
+
+    const heap = document.createElement('div');
+    heap.className = 'bl-heap';
+    const offsets = [
+      { x: 0, y: 0, r: -4 },
+      { x: 3, y: -2, r: 2 },
+      { x: 6, y: -1, r: 5 },
+    ];
+    for (let c = 0; c < 3; c++) {
+      const mini = document.createElement('div');
+      mini.className = 'bl-heap-card';
+      const o = offsets[c];
+      mini.style.transform = `translate(${o.x}px, ${o.y}px) rotate(${o.r}deg)`;
+      mini.style.zIndex = String(c);
+      heap.appendChild(mini);
+    }
+    heapWrap.appendChild(heap);
+
+    const badge = document.createElement('span');
+    badge.className = 'bl-heap-badge';
+    badge.textContent = String(count);
+    heapWrap.appendChild(badge);
+
+    infoEl.appendChild(heapWrap);
   }
 }
 
