@@ -1350,7 +1350,7 @@ body {
   justify-content: center;
   max-width: 380px;
   margin: 0 auto;
-  padding: 4px 0;
+  padding: 0;
 }
 
 .bl-hand-grid .bl-hand-card {
@@ -1432,8 +1432,8 @@ body {
 /* Bluff button — large pulsing */
 .bl-bluff-btn {
   max-width: 240px;
-  font-size: 1.15rem;
-  padding: 14px 20px;
+  font-size: 1.05rem;
+  padding: 9px 20px;
   animation: bl-pulse 1.5s ease-in-out infinite;
 }
 

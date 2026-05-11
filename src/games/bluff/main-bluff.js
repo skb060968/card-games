@@ -641,6 +641,13 @@ async function handleChallenge() {
     }
 
     clearSelection();
+
+    // If the truthful placer had emptied their hand, game is over
+    if (state.status === 'finished') {
+      handleWin();
+      return;
+    }
+
     renderUI();
   } catch (err) {
     console.error('Challenge failed:', err);
@@ -712,6 +719,13 @@ function handleRemoteUpdate(gameData, lastMove) {
         setEventMessage(`✅ ${placerName} was truthful! ${loserName} takes the pile.`);
       }
       clearSelection();
+
+      // If the truthful placer had emptied their hand, game is over
+      if (state.status === 'finished') {
+        handleWin();
+        return;
+      }
+
       renderUI();
     });
     return;

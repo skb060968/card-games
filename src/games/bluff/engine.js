@@ -247,6 +247,27 @@ export function resolveChallenge(state, challengerIndex) {
 
   const nextPlayer = (placerIndex + 1) % state.players.length;
 
+  // If the placer was truthful AND had emptied their hand with the placement,
+  // they have won — nothing remaining and no way to penalize them further.
+  if (!bluffCaught && state.lastPlacement.placerEmpty) {
+    return {
+      newState: {
+        ...state,
+        players: newPlayers,
+        centerPile: [],
+        phase: 'finished',
+        status: 'finished',
+        winnerIndex: placerIndex,
+        lastPlacement: null,
+        currentRank: null,
+        roundStartPlayer: nextPlayer,
+        playersActedThisRound: [],
+      },
+      bluffCaught,
+      revealedCards,
+    };
+  }
+
   return {
     newState: {
       ...state,
