@@ -497,7 +497,7 @@ async function handlePlacement(cardIndices) {
 
       await writeFullState(state, lastMove);
 
-      setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
     } catch (err) {
@@ -541,7 +541,7 @@ async function handlePlacement(cardIndices) {
 
       await writeFullState(state, lastMove);
 
-      setEventMessage(`You placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
       renderUI();
     } catch (err) {
@@ -742,7 +742,7 @@ function handleRemoteUpdate(gameData, lastMove) {
     if (lp) {
       const placer = state.players[lp.playerIndex];
       speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-      setEventMessage(`${placer?.emoji || ''} ${placer?.name || 'Player'} placed ${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      setEventMessage(`${placer?.emoji || ''} ${placer?.name || 'Player'} placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
     }
 
     // Animate remote placement: card-back from opponent block to pile

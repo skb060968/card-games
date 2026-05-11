@@ -88,7 +88,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
       placeBtn.className = 'btn primary bl-place-btn';
       placeBtn.type = 'button';
       const count = _selectedIndices.size;
-      placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Select Cards';
+      placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Place Cards';
       placeBtn.disabled = count === 0;
       placeBtn.addEventListener('click', () => {
         if (_selectedIndices.size > 0 && _selectedIndices.size <= 4 && callbacks.onPlaceCards) {
@@ -115,7 +115,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
       const bluffBtn = document.createElement('button');
       bluffBtn.className = 'btn primary bl-bluff-btn';
       bluffBtn.type = 'button';
-      bluffBtn.textContent = '🃏 BLUFF!';
+      bluffBtn.textContent = 'BLUFF!';
       bluffBtn.addEventListener('click', () => {
         if (callbacks.onChallenge) callbacks.onChallenge();
       });
@@ -283,15 +283,20 @@ function renderRoundRankIndicator(state) {
     indicator.className = 'bl-round-rank-indicator bl-placement-banner';
     indicator.innerHTML = '';
 
-    const line1 = document.createElement('div');
-    line1.className = 'bl-banner-who';
-    line1.textContent = `${emoji} ${name}`;
-    indicator.appendChild(line1);
+    const line = document.createElement('div');
+    line.className = 'bl-banner-line';
 
-    const line2 = document.createElement('div');
-    line2.className = 'bl-banner-what';
-    line2.textContent = `${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`;
-    indicator.appendChild(line2);
+    const who = document.createElement('span');
+    who.className = 'bl-banner-who';
+    who.textContent = `${emoji} ${name}`;
+    line.appendChild(who);
+
+    const what = document.createElement('span');
+    what.className = 'bl-banner-what';
+    what.textContent = `${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`;
+    line.appendChild(what);
+
+    indicator.appendChild(line);
   } else if (state.currentRank) {
     indicator.className = 'bl-round-rank-indicator bl-round-rank-active';
     indicator.innerHTML = '';
@@ -381,7 +386,7 @@ function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
           const placeBtn = actionsArea.querySelector('.bl-place-btn');
           if (placeBtn) {
             const count = _selectedIndices.size;
-            placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Select Cards to Place';
+            placeBtn.textContent = count > 0 ? `Place ${count} Card${count > 1 ? 's' : ''}` : 'Place Cards';
             placeBtn.disabled = count === 0;
           }
         }
@@ -444,7 +449,7 @@ export function renderChallengeWindow(remainingMs, canChallenge, onChallenge, an
     const bluffBtn = document.createElement('button');
     bluffBtn.className = 'btn primary bl-bluff-btn';
     bluffBtn.type = 'button';
-    bluffBtn.textContent = '🃏 BLUFF!';
+    bluffBtn.textContent = 'BLUFF!';
     bluffBtn.addEventListener('click', () => {
       if (onChallenge) onChallenge();
     });

@@ -126,13 +126,19 @@ function renderPot(container, pot) {
 
 /**
  * Renders cards for all players.
- * Local player sees face-up cards; opponents see face-down during betting.
- * During show/finished, all active players' cards are face-up.
+ * During betting: only show self's cards face-up (opponents hidden — their
+ * card count is already represented by the mini-strip in the top block).
+ * During show/finished: all active players' cards are face-up for reveal.
  */
 function renderCards(container, state, localPlayerIndex) {
   container.innerHTML = '';
 
+  const isShowdown = state.status === 'show' || state.status === 'finished';
+
   state.players.forEach((player, i) => {
+    // During betting phase, skip opponents — only render the local player's cards
+    if (!isShowdown && i !== localPlayerIndex) return;
+
     const playerCards = document.createElement('div');
     playerCards.className = 'pk-player-cards';
     if (player.folded) playerCards.classList.add('pk-cards-folded');
@@ -160,7 +166,7 @@ function renderCards(container, state, localPlayerIndex) {
     const cardsRow = document.createElement('div');
     cardsRow.className = 'pk-cards-row';
 
-    const showFaceUp = i === localPlayerIndex || state.status === 'show' || state.status === 'finished';
+    const showFaceUp = i === localPlayerIndex || isShowdown;
 
     player.hand.forEach((card) => {
       if (showFaceUp && !player.folded) {
@@ -174,7 +180,7 @@ function renderCards(container, state, localPlayerIndex) {
     });
 
     // Show hand ranking label during show/finished for active players
-    if ((state.status === 'show' || state.status === 'finished') && !player.folded) {
+    if (isShowdown && !player.folded) {
       const rankLabel = document.createElement('div');
       rankLabel.className = 'pk-hand-rank';
       try {

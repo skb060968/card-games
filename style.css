@@ -567,8 +567,8 @@ body {
   text-align: center;
   font-size: 0.85rem;
   font-weight: 700;
-  min-height: 24px;
-  padding: 4px 8px;
+  min-height: 0;
+  padding: 2px 8px;
   color: var(--color-accent);
 }
 
@@ -1301,12 +1301,12 @@ body {
    21) BLUFF — GAMEPLAY STYLES
    ========================================================= */
 
-/* Gameplay layout */
+/* Gameplay layout — natural flow, all items stack tightly from top */
 #bl-gameplay {
-  gap: 4px;
-  padding: 4px 8px;
-  min-height: 100svh;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0 8px;
+  justify-content: flex-start;
+  flex: 1;
 }
 
 /* Center pile area */
@@ -1605,23 +1605,32 @@ body {
   opacity: 0.8;
 }
 
-/* Prominent placement banner — shows who placed what */
+/* Prominent placement banner — single-line: emoji name + count × rank */
 .bl-placement-banner {
   background: linear-gradient(180deg, rgba(243,156,18,0.25) 0%, rgba(243,156,18,0.1) 100%);
   border: 2px solid rgba(243,156,18,0.5);
-  padding: 5px 18px;
-  max-width: 260px;
+  padding: 4px 14px;
+  max-width: 320px;
   box-shadow: 0 0 12px rgba(243,156,18,0.2);
 }
 
+.bl-banner-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
 .bl-banner-who {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: var(--color-text-light);
   opacity: 0.9;
 }
 
 .bl-banner-what {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: var(--color-accent);
   letter-spacing: 1px;
