@@ -91,6 +91,30 @@ function cleanupAndGoHome() {
 
 /* ======= SPEECH HELPER ======= */
 
+// Indian-style rank names for speech — sounds natural for Hindi speakers.
+const SPOKEN_RANK_SINGULAR = {
+  'A': 'ekka', '2': 'dukki', '3': 'tikki', '4': 'chowka', '5': 'panja',
+  '6': 'chhakka', '7': 'satta', '8': 'atthi', '9': 'nehla', '10': 'dahla',
+  'J': 'ghulam', 'Q': 'begum', 'K': 'badshah',
+};
+const SPOKEN_RANK_PLURAL = {
+  'A': 'ekke', '2': 'dukkiyan', '3': 'tikkiyan', '4': 'chowke', '5': 'panje',
+  '6': 'chhakke', '7': 'satte', '8': 'atthiyan', '9': 'nehle', '10': 'dahle',
+  'J': 'ghulam', 'Q': 'begum', 'K': 'badshah',
+};
+const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
+
+/**
+ * Returns a speech-friendly phrase for a count of a rank.
+ * e.g. (3, '5') → "teen panje"; (1, 'K') → "ek badshah".
+ */
+function spokenRankPhrase(count, rank) {
+  const table = count > 1 ? SPOKEN_RANK_PLURAL : SPOKEN_RANK_SINGULAR;
+  const word = table[rank] || rank;
+  const num = SPOKEN_COUNT[count] || String(count);
+  return `${num} ${word}`;
+}
+
 function speak(text) {
   if (isMuted()) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -498,7 +522,7 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      speak(spokenRankPhrase(lp.count, lp.declaredRank));
       renderUI();
     } catch (err) {
       _isAnimating = false;
@@ -542,7 +566,7 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      speak(spokenRankPhrase(lp.count, lp.declaredRank));
       renderUI();
     } catch (err) {
       _isAnimating = false;
@@ -741,7 +765,7 @@ function handleRemoteUpdate(gameData, lastMove) {
     const lp = state.lastPlacement;
     if (lp) {
       const placer = state.players[lp.playerIndex];
-      speak(`${lp.count} ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
+      speak(spokenRankPhrase(lp.count, lp.declaredRank));
       setEventMessage(`${placer?.emoji || ''} ${placer?.name || 'Player'} placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
     }
 

@@ -475,8 +475,9 @@ async function handleDiscard(handIndex) {
   try {
     const discardedCard = state.players[playerIndex].hand[handIndex];
 
-    // Capture card rect before state change
+    // Capture card rect + element before state change
     const cardRect = getHandCardRect(handIndex);
+    const sourceCardEl = document.querySelector(`#sr-hand-area .sr-arc-card[data-hand-index="${handIndex}"]`);
 
     const { newState, won, winGroups } = discardCard(state, handIndex);
 
@@ -497,17 +498,13 @@ async function handleDiscard(handIndex) {
     // Set animating flag BEFORE Firebase write to block listener re-renders
     _isAnimating = true;
 
+    // Hide the source card in-place (keeps hand layout stable during animation)
+    if (sourceCardEl) sourceCardEl.style.visibility = 'hidden';
+
     await writeFullState(newState, discardLastMove);
 
-    // Animate: card slides from hand to discard pile
-    // Render with OLD discard pile during animation to prevent duplicate card
+    // Animate the throw — old state still rendered (card hidden, pile shows old top)
     if (cardRect) {
-      const oldDiscardPile = state.discardPile; // state still has old pile
-      state = newState;
-      // Temporarily render with old discard pile (card not yet on pile visually)
-      const tempState = { ...state, discardPile: oldDiscardPile };
-      renderGameplayWithState(tempState);
-
       const discardRect = getPileRect('discard');
       if (discardRect) {
         playSound('throw');
@@ -515,7 +512,9 @@ async function handleDiscard(handIndex) {
         await animateCardMove(cardRect, discardRect, faceEl);
       }
 
+      state = newState;
       _isAnimating = false;
+
       // Check win AFTER animation
       if (won) {
         if (!_resultsShown) {
@@ -532,7 +531,7 @@ async function handleDiscard(handIndex) {
         return;
       }
 
-      // Now render with real state (card on pile)
+      // Now render with real state (card on pile, removed from hand)
       renderUI();
     } else {
       state = newState;
@@ -641,9 +640,12 @@ function handleRemoteUpdate(gameData, lastMove) {
   if (lastMove && lastMove.action === 'discard' && lastMove.playerIndex !== playerIndex && lastMove.discardedCard) {
     const discardedCard = deserializeCard(lastMove.discardedCard);
     const oldDiscardPile = state ? [...state.discardPile] : [];
-    state = newState;
 
-    if (state.status === 'finished') {
+    // Keep OLD state rendered during animation (pile shows old top, opponent hand count unchanged)
+    const oldState = state;
+
+    if (newState.status === 'finished') {
+      state = newState;
       if (state.winnerIndex != null && !_resultsShown) {
         _resultsShown = true;
         const winner = state.players[state.winnerIndex];
@@ -663,9 +665,6 @@ function handleRemoteUpdate(gameData, lastMove) {
       return;
     }
 
-    // Render with old discard pile during animation to prevent duplicate card
-    const tempState = { ...state, discardPile: oldDiscardPile };
-    renderGameplayWithState(tempState);
     _isAnimating = true;
 
     const runDiscardAnim = async () => {
@@ -681,6 +680,7 @@ function handleRemoteUpdate(gameData, lastMove) {
 
       await new Promise((r) => setTimeout(r, 300));
 
+      state = newState;
       _isAnimating = false;
       renderUI();
     };

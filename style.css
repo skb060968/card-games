@@ -1343,7 +1343,7 @@ body {
   --bl-grid-card-h: 54px;
 }
 
-/* Multi-row grid: 10 columns, slight horizontal overlap */
+/* Multi-row grid: slight horizontal overlap keeps rows narrow on mobile */
 .bl-hand-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1356,7 +1356,7 @@ body {
 .bl-hand-grid .bl-hand-card {
   width: var(--bl-grid-card-w);
   height: var(--bl-grid-card-h);
-  margin: 2px -4px;
+  margin: 2px -7px;
   transition: transform 0.15s, box-shadow 0.15s;
   cursor: default;
   flex-shrink: 0;
@@ -1650,8 +1650,14 @@ body {
   max-width: 160px;
   font-size: 0.75rem;
   padding: 6px 12px;
-  margin-top: 4px;
+  margin-top: 0;
   opacity: 0.8;
+}
+
+.bl-sort-host {
+  display: flex;
+  justify-content: center;
+  padding: 2px 0;
 }
 
 .bl-pass-btn {

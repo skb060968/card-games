@@ -121,8 +121,10 @@ export function flipCard(state, cardIndex, playerIndex) {
     return { ...p };
   });
 
-  // Advance turn
-  const nextPlayer = (state.currentPlayerIndex + 1) % state.players.length;
+  // Advance turn only if no match was made — matcher keeps their turn
+  const nextPlayer = matchedIndex != null
+    ? state.currentPlayerIndex
+    : (state.currentPlayerIndex + 1) % state.players.length;
 
   return {
     newState: {

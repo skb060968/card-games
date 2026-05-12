@@ -132,17 +132,28 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
     }
 
     actionsArea.appendChild(btnRow);
-
-    // Sort button — always available to arrange cards by rank
-    const sortBtn = document.createElement('button');
-    sortBtn.className = 'btn secondary bl-sort-btn';
-    sortBtn.type = 'button';
-    sortBtn.textContent = '🔤 Sort by Rank';
-    sortBtn.addEventListener('click', () => {
-      if (callbacks.onSort) callbacks.onSort();
-    });
-    actionsArea.appendChild(sortBtn);
   }
+
+  // Sort button — placed below the hand grid
+  const sortHost = document.getElementById('bl-sort-host') || (() => {
+    const host = document.createElement('div');
+    host.id = 'bl-sort-host';
+    host.className = 'bl-sort-host';
+    const handAreaEl = document.getElementById('bl-hand-area');
+    if (handAreaEl && handAreaEl.parentNode) {
+      handAreaEl.parentNode.insertBefore(host, handAreaEl.nextSibling);
+    }
+    return host;
+  })();
+  sortHost.innerHTML = '';
+  const sortBtn = document.createElement('button');
+  sortBtn.className = 'btn secondary bl-sort-btn';
+  sortBtn.type = 'button';
+  sortBtn.textContent = '🔤 Sort by Rank';
+  sortBtn.addEventListener('click', () => {
+    if (callbacks.onSort) callbacks.onSort();
+  });
+  sortHost.appendChild(sortBtn);
 }
 
 /**
