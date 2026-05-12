@@ -560,8 +560,14 @@ function handleRemoteUpdate(gameData, lastMove) {
       }
 
       _isAnimating = false;
-      // Re-render with real state (discard pile updated after draw)
-      renderUI();
+      // Re-render with POST-DRAW pile only — do not reveal any later discard yet.
+      // If Firebase has already applied the subsequent discard, `state.discardPile`
+      // would show the new top and cause a visible glitch before the discard animation starts.
+      const postDrawPile = drawnFrom === 'discardPile'
+        ? oldDiscardPile.slice(0, -1)
+        : oldDiscardPile;
+      const postDrawState = { ...state, discardPile: postDrawPile };
+      renderGameplayWithState(postDrawState);
     };
 
     runDrawAnim();
@@ -609,8 +615,8 @@ function handleRemoteUpdate(gameData, lastMove) {
         await animateCardMove(targetRect, discardRect, discardEl, 350);
       }
 
-      await new Promise((r) => setTimeout(r, 300));
-
+      // Immediately render new state — pile shows the discarded card as new top
+      // with no intermediate re-render or delay.
       state = newState;
       _isAnimating = false;
       renderUI();

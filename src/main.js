@@ -603,12 +603,8 @@ function handleRemoteGameUpdate(gameData, lastMove) {
         thrownCard = deserializeCard(lastMove.card);
       }
 
-      state = newState;
-
-      // Render with old pile during animation (prevents duplicate card)
-      const tempState = { ...state, pile: oldPile };
-      renderGameplay(tempState, playerIndex);
-
+      // Keep OLD state rendered during the throw animation — pile already
+      // shows the correct current top on this device, no pre-render needed.
       isProcessingTurn = true;
 
       const opponentDeck = document.querySelector(`.player-slot[data-player-index="${prevPlayerIdx}"] .player-slot-deck .card`);
@@ -623,6 +619,9 @@ function handleRemoteGameUpdate(gameData, lastMove) {
           const faceEl = renderCardFace(thrownCard);
           await animateThrowToPile(deckRect, pileRect, faceEl);
         }
+
+        // Swap to new state now that the floater has landed
+        state = newState;
 
         if (wasCaptured) {
           // After throw lands, briefly show the pile with the thrown card on top
