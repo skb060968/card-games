@@ -1139,7 +1139,7 @@ body {
 .sr-piles-area {
   display: flex;
   justify-content: center;
-  padding: 12px 0;
+  padding: 4px 0;
 }
 
 .sr-piles-row {
@@ -1189,7 +1189,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 0 8px;
+  padding: 2px 0 2px;
   overflow: visible;
   /* Smaller cards for rummy hand to fit 11 cards on mobile */
   --sr-card-w: 46px;
@@ -1201,14 +1201,14 @@ body {
   display: flex;
   justify-content: center;
   gap: 8px;
-  padding: 2px 0 8px;
+  padding: 0 0 2px;
 }
 
 .sr-arc {
   display: flex;
   justify-content: center;
   position: relative;
-  padding: 24px 4px 0;
+  padding: 16px 4px 0;
 }
 
 .sr-arc-card {
@@ -1264,12 +1264,12 @@ body {
   box-shadow: 0 0 10px rgba(46,204,113,0.7), 0 0 20px rgba(46,204,113,0.3);
 }
 
-/* Gameplay layout */
+/* Gameplay layout — natural flow, all items stack tightly from top */
 #sr-gameplay {
-  gap: var(--gap-sm);
-  padding: 4px 8px;
-  min-height: 100svh;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px 8px;
+  justify-content: flex-start;
+  flex: 1;
 }
 
 /* Win display groups */
@@ -2241,12 +2241,12 @@ body {
    PERFECT TEN — GAMEPLAY STYLES
    ========================================================= */
 
-/* Gameplay layout */
+/* Gameplay layout — natural flow, all items stack tightly from top */
 #pt-gameplay {
-  gap: var(--gap-sm);
-  padding: 4px 8px;
-  min-height: 100svh;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px 8px;
+  justify-content: flex-start;
+  flex: 1;
 }
 
 /* Rank tracker area */
