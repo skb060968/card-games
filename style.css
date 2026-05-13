@@ -1264,11 +1264,11 @@ body {
   box-shadow: 0 0 10px rgba(46,204,113,0.7), 0 0 20px rgba(46,204,113,0.3);
 }
 
-/* Gameplay layout — natural flow, all items stack tightly from top */
+/* Gameplay layout — distributes items evenly across available height */
 #sr-gameplay {
   gap: 10px;
-  padding: 4px 8px 8px;
-  justify-content: flex-start;
+  padding: 8px;
+  justify-content: space-between;
   flex: 1;
 }
 
@@ -2241,11 +2241,11 @@ body {
    PERFECT TEN — GAMEPLAY STYLES
    ========================================================= */
 
-/* Gameplay layout — natural flow, all items stack tightly from top */
+/* Gameplay layout — distributes items evenly across available height */
 #pt-gameplay {
   gap: 10px;
-  padding: 4px 8px 8px;
-  justify-content: flex-start;
+  padding: 8px;
+  justify-content: space-between;
   flex: 1;
 }
 
