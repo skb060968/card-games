@@ -191,6 +191,19 @@ export function renderPotDisplay(pot) {
 }
 
 /**
+ * Immediately clears any in-flight confetti particles from the screen.
+ * Call this when navigating away from the results screen so particles
+ * don't keep falling onto the next screen.
+ */
+export function clearConfetti() {
+  if (typeof window === 'undefined') return;
+  if (typeof confetti !== 'function') return;
+  try {
+    if (typeof confetti.reset === 'function') confetti.reset();
+  } catch (_) {}
+}
+
+/**
  * Triggers a gold coin-like confetti rain from the top of the screen.
  * Uses canvas-confetti library with gold/yellow colors and flat shapes.
  * Respects prefers-reduced-motion. Falls back silently if confetti unavailable.

@@ -38,7 +38,7 @@ import {
   playSound,
 } from '../../shared/voice-announcer.js';
 import { renderCardBack } from '../../shared/card-renderer.js';
-import { coinRain } from '../../shared/win-pot-calculator.js';
+import { coinRain, clearConfetti } from '../../shared/win-pot-calculator.js';
 import {
   createRoom,
   joinRoom,
@@ -91,31 +91,25 @@ function cleanupAndGoHome() {
 
 /* ======= SPEECH HELPER ======= */
 
-// Indian-style rank names for speech — sounds natural for Hindi speakers.
-const SPOKEN_RANK_SINGULAR = {
-  'A': 'ekka', '2': 'dukki', '3': 'tikki', '4': 'chowka', '5': 'panja',
-  '6': 'chhakka', '7': 'satta', '8': 'atthi', '9': 'nehla', '10': 'dahla',
-  'J': 'ghulam', 'Q': 'begum', 'K': 'badshah',
-};
-const SPOKEN_RANK_PLURAL = {
-  'A': 'ekke', '2': 'dukkiyan', '3': 'tikkiyan', '4': 'chowke', '5': 'panje',
-  '6': 'chhakke', '7': 'satte', '8': 'atthiyan', '9': 'nehle', '10': 'dahle',
-  'J': 'ghulam', 'Q': 'begum', 'K': 'badshah',
+// Indian-style rank names (singular form used for any count).
+const SPOKEN_RANK = {
+  'A': 'ekke', '2': 'dooki', '3': 'tikki', '4': 'chowki', '5': 'panji',
+  '6': 'chhakki', '7': 'satti', '8': 'atthi', '9': 'nehli', '10': 'dehli',
+  'J': 'gulam', 'Q': 'begum', 'K': 'badshah',
 };
 const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
 
 /**
  * Returns a speech-friendly phrase for a count of a rank.
- * e.g. (3, '5') → "teen panje"; (1, 'K') → "ek badshah".
+ * e.g. (3, '5') → "teen panji"; (1, 'K') → "ek badshah".
  */
 function spokenRankPhrase(count, rank) {
-  const table = count > 1 ? SPOKEN_RANK_PLURAL : SPOKEN_RANK_SINGULAR;
-  const word = table[rank] || rank;
+  const word = SPOKEN_RANK[rank] || rank;
   const num = SPOKEN_COUNT[count] || String(count);
   return `${num} ${word}`;
 }
 
-function speak(text) {
+function speak(text, lang) {
   if (isMuted()) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
@@ -125,8 +119,16 @@ function speak(text) {
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
+    if (lang) utterance.lang = lang;
     speechSynthesis.speak(utterance);
   } catch (_) {}
+}
+
+/**
+ * Speaks a card placement phrase using hi-IN for Hindi voices where available.
+ */
+function speakPlacement(count, rank) {
+  speak(spokenRankPhrase(count, rank), 'hi-IN');
 }
 
 /* ======= CARD ANIMATIONS ======= */
@@ -522,7 +524,7 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-      speak(spokenRankPhrase(lp.count, lp.declaredRank));
+      speakPlacement(lp.count, lp.declaredRank);
       renderUI();
     } catch (err) {
       _isAnimating = false;
@@ -566,7 +568,7 @@ async function handlePlacement(cardIndices) {
       await writeFullState(state, lastMove);
 
       setEventMessage(`You placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
-      speak(spokenRankPhrase(lp.count, lp.declaredRank));
+      speakPlacement(lp.count, lp.declaredRank);
       renderUI();
     } catch (err) {
       _isAnimating = false;
@@ -765,7 +767,7 @@ function handleRemoteUpdate(gameData, lastMove) {
     const lp = state.lastPlacement;
     if (lp) {
       const placer = state.players[lp.playerIndex];
-      speak(spokenRankPhrase(lp.count, lp.declaredRank));
+      speakPlacement(lp.count, lp.declaredRank);
       setEventMessage(`${placer?.emoji || ''} ${placer?.name || 'Player'} placed ${lp.count} × ${lp.declaredRank}${lp.count > 1 ? 's' : ''}`);
     }
 
@@ -830,6 +832,7 @@ function wireResults() {
   const btnHome = document.getElementById('bl-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    clearConfetti();
     if (isHost) {
       if (!btnAgain.dataset.hostReady) {
         btnAgain.dataset.hostReady = 'true';
@@ -854,6 +857,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    clearConfetti();
     if (window._blReadyCleanup) window._blReadyCleanup();
     if (roomCode) {
       if (playerIndex != null) { try { await update(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/ready`), { [`player_${playerIndex}`]: 'left' }); } catch (_) {} }

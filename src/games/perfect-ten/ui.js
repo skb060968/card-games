@@ -279,7 +279,7 @@ function renderArcHand(container, hand, canDiscard, onCardTap, onSort) {
   const sortBtn = document.createElement('button');
   sortBtn.className = 'btn secondary bl-sort-btn';
   sortBtn.type = 'button';
-  sortBtn.textContent = '🔤 Sort by Rank';
+  sortBtn.textContent = '🔢 Sort by Rank';
   sortBtn.addEventListener('click', () => {
     if (onSort) onSort();
   });

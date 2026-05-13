@@ -2319,12 +2319,12 @@ body {
    POKER — GAMEPLAY STYLES
    ========================================================= */
 
-/* Gameplay layout */
+/* Gameplay layout — distributes items evenly across available height */
 #pk-gameplay {
-  gap: var(--gap-sm);
-  padding: 4px 8px;
-  min-height: 100svh;
+  gap: 10px;
+  padding: 8px;
   justify-content: space-between;
+  flex: 1;
 }
 
 /* Pot display */

@@ -26,7 +26,7 @@ import {
 
 import { animateSweep, animateThrowToPile } from './shared/animation-manager.js';
 import { renderCardFace } from './shared/card-renderer.js';
-import { coinRain } from './shared/win-pot-calculator.js';
+import { coinRain, clearConfetti } from './shared/win-pot-calculator.js';
 import {
   announceCapture,
   announceWin,
@@ -742,6 +742,7 @@ function wireEndGame() {
 
 function wireResults() {
   btnPlayAgain.addEventListener('click', async () => {
+    clearConfetti();
     if (isHost) {
       if (!btnPlayAgain.dataset.hostReady) {
         // First click: signal readiness
@@ -788,6 +789,7 @@ function wireResults() {
   });
 
   btnHome.addEventListener('click', async () => {
+    clearConfetti();
     if (window._readyCleanup) window._readyCleanup();
 
     if (roomCode) {

@@ -149,7 +149,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   const sortBtn = document.createElement('button');
   sortBtn.className = 'btn secondary bl-sort-btn';
   sortBtn.type = 'button';
-  sortBtn.textContent = '🔤 Sort by Rank';
+  sortBtn.textContent = '🔢 Sort by Rank';
   sortBtn.addEventListener('click', () => {
     if (callbacks.onSort) callbacks.onSort();
   });

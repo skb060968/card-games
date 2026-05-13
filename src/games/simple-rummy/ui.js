@@ -53,7 +53,7 @@ export function renderGameplay(state, localPlayerIndex, callbacks) {
   const rankBtn = document.createElement('button');
   rankBtn.className = 'btn secondary bl-sort-btn';
   rankBtn.type = 'button';
-  rankBtn.textContent = '🔤 Sort Rank';
+  rankBtn.textContent = '🔢 Sort Rank';
   rankBtn.addEventListener('click', () => { if (callbacks.onSortByRank) callbacks.onSortByRank(); });
   sortRow.appendChild(rankBtn);
 

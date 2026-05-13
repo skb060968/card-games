@@ -31,7 +31,7 @@ import {
   warmSpeech,
   playSound,
 } from '../../shared/voice-announcer.js';
-import { coinRain } from '../../shared/win-pot-calculator.js';
+import { coinRain, clearConfetti } from '../../shared/win-pot-calculator.js';
 import {
   createRoom,
   joinRoom,
@@ -743,6 +743,7 @@ function wireResults() {
   const btnHome = document.getElementById('pt-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    clearConfetti();
     if (isHost) {
       if (!btnAgain.dataset.hostReady) {
         btnAgain.dataset.hostReady = 'true';
@@ -767,6 +768,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    clearConfetti();
     if (window._ptReadyCleanup) window._ptReadyCleanup();
     if (roomCode) {
       if (playerIndex != null) { try { await update(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/ready`), { [`player_${playerIndex}`]: 'left' }); } catch (_) {} }

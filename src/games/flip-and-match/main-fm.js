@@ -31,7 +31,7 @@ import {
   warmSpeech,
   playSound,
 } from '../../shared/voice-announcer.js';
-import { coinRain } from '../../shared/win-pot-calculator.js';
+import { coinRain, clearConfetti } from '../../shared/win-pot-calculator.js';
 import {
   createRoom,
   joinRoom,
@@ -518,6 +518,7 @@ function wireResults() {
   const btnHome = document.getElementById('fm-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    clearConfetti();
     if (isHost) {
       if (!btnAgain.dataset.hostReady) {
         btnAgain.dataset.hostReady = 'true';
@@ -548,6 +549,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    clearConfetti();
     if (window._fmReadyCleanup) window._fmReadyCleanup();
     if (roomCode) {
       if (playerIndex != null) {
