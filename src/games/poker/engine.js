@@ -33,7 +33,7 @@ const CATEGORY_LABELS = {
 
 const BET_AMOUNT = 10;
 const RAISE_AMOUNT = 20;
-const STARTING_CHIPS = 100;
+const STARTING_CHIPS = 200;
 
 /* ======= GAME CREATION ======= */
 

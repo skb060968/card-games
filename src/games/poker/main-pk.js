@@ -239,6 +239,65 @@ function renderUI() {
 
 /* ======= ACTION HANDLING ======= */
 
+/**
+ * Animates small gold coins flying from a source rect to the pot area.
+ * Coin count scales with chips added: 10→1, 20→2, 30→3, capped at 8.
+ */
+function animateCoinsToPot(sourceRect, chipsAdded) {
+  if (!sourceRect) return;
+  const potEl = document.getElementById('pk-pot-area');
+  if (!potEl) return;
+  if (typeof window !== 'undefined' && window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const potRect = potEl.getBoundingClientRect();
+  const coinCount = Math.max(1, Math.min(8, Math.round(chipsAdded / 10)));
+  const duration = 500;
+
+  for (let i = 0; i < coinCount; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'pk-flying-coin';
+    // Random small offset within source so coins don't overlap at start
+    const startX = sourceRect.left + sourceRect.width / 2 + (Math.random() - 0.5) * 20;
+    const startY = sourceRect.top + sourceRect.height / 2 + (Math.random() - 0.5) * 10;
+    const endX = potRect.left + potRect.width / 2 + (Math.random() - 0.5) * 24;
+    const endY = potRect.top + potRect.height / 2 + (Math.random() - 0.5) * 10;
+    coin.style.left = `${startX}px`;
+    coin.style.top = `${startY}px`;
+    document.body.appendChild(coin);
+
+    const delay = i * 70;
+
+    // Double-rAF so initial position paints before we transition
+    requestAnimationFrame(() => {
+      coin.offsetWidth; // eslint-disable-line no-unused-expressions
+      setTimeout(() => {
+        coin.style.transition = `left ${duration}ms cubic-bezier(.4,.1,.6,1), top ${duration}ms cubic-bezier(.3,-.3,.7,1), opacity ${duration}ms ease-out`;
+        requestAnimationFrame(() => {
+          coin.style.left = `${endX}px`;
+          coin.style.top = `${endY}px`;
+          coin.style.opacity = '0.6';
+        });
+        setTimeout(() => {
+          if (coin.parentNode) coin.parentNode.removeChild(coin);
+        }, duration + 40);
+      }, delay);
+    });
+  }
+}
+
+/** Returns the bounding rect of the local player's self bar. */
+function getSelfBarRect() {
+  const el = document.getElementById('pk-self-bar');
+  return el ? el.getBoundingClientRect() : null;
+}
+
+/** Returns the bounding rect of an opponent's player block. */
+function getOpponentBlockRect(pIdx) {
+  const el = document.querySelector(`#pk-all-players .game-player-block[data-player-index="${pIdx}"]`);
+  return el ? el.getBoundingClientRect() : null;
+}
+
 async function handleAction(action) {
   if (!state || state.status !== 'betting') return;
   if (state.currentPlayerIndex !== playerIndex) return;
@@ -246,6 +305,7 @@ async function handleAction(action) {
   warmSpeech();
 
   try {
+    const oldBet = state.players[playerIndex].currentBet;
     const newState = performAction(state, playerIndex, action);
 
     const validation = validateState(newState);
@@ -264,19 +324,23 @@ async function handleAction(action) {
 
     await writeFullState(state, lastMove);
 
-    // Event messages
+    // Event messages + coin animation for chip-putting actions
     const player = state.players[playerIndex];
+    const chipsAdded = player.currentBet - oldBet;
     switch (action.type) {
       case 'bet':
         playSound('throw');
+        animateCoinsToPot(getSelfBarRect(), chipsAdded);
         setEventMessage(`You bet 10 chips`);
         break;
       case 'raise':
         playSound('throw');
+        animateCoinsToPot(getSelfBarRect(), chipsAdded);
         setEventMessage(`You raised`);
         break;
       case 'call':
         playSound('throw');
+        animateCoinsToPot(getSelfBarRect(), chipsAdded);
         setEventMessage(`You called`);
         break;
       case 'fold':
@@ -352,18 +416,24 @@ function handleRemoteUpdate(gameData, lastMove) {
   if (lastMove && lastMove.playerIndex !== playerIndex) {
     const actorName = state ? state.players[lastMove.playerIndex]?.name || 'Opponent' : 'Opponent';
     const actorEmoji = state ? state.players[lastMove.playerIndex]?.emoji || '' : '';
+    const oldBet = state ? state.players[lastMove.playerIndex]?.currentBet || 0 : 0;
+    const newBet = newState.players[lastMove.playerIndex]?.currentBet || 0;
+    const chipsAdded = Math.max(0, newBet - oldBet);
 
     switch (lastMove.action) {
       case 'bet':
         playSound('throw');
+        animateCoinsToPot(getOpponentBlockRect(lastMove.playerIndex), chipsAdded);
         setEventMessage(`${actorEmoji} ${actorName} bet 10 chips`);
         break;
       case 'raise':
         playSound('throw');
+        animateCoinsToPot(getOpponentBlockRect(lastMove.playerIndex), chipsAdded);
         setEventMessage(`${actorEmoji} ${actorName} raised`);
         break;
       case 'call':
         playSound('throw');
+        animateCoinsToPot(getOpponentBlockRect(lastMove.playerIndex), chipsAdded);
         setEventMessage(`${actorEmoji} ${actorName} called`);
         break;
       case 'fold':

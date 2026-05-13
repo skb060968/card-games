@@ -368,8 +368,8 @@ export function renderResults(state, isFoldWin = false) {
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
 
-      // Show pot won as coin stack (chips gained = winner.chips - 100 starting)
-      const potWon = winner.chips - 100;
+      // Show pot won as coin stack (chips gained = winner.chips - 200 starting)
+      const potWon = winner.chips - 200;
       if (potWon > 0) {
         display.appendChild(renderPotDisplay(potWon));
       }
