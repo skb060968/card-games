@@ -95,7 +95,7 @@ function cleanupAndGoHome() {
 const SPOKEN_RANK = {
   'A': 'ekke', '2': 'dooki', '3': 'tikki', '4': 'chowki', '5': 'panji',
   '6': 'chhakki', '7': 'satti', '8': 'atthi', '9': 'nehli', '10': 'dehli',
-  'J': 'gulam', 'Q': 'begum', 'K': 'badshah',
+  'J': 'gulaam', 'Q': 'rani', 'K': 'baadshah',
 };
 const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
 
