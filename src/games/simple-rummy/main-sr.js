@@ -565,6 +565,7 @@ async function handleDiscard(handIndex) {
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
   if (_isAnimating) return;
+  if (_resultsShown) return;
 
   setNewlyDrawnIndex(-1);
   clearSelection();

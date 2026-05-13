@@ -575,6 +575,7 @@ async function handleCardTap(handIndex) {
 function handleRemoteGameUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
   if (isProcessingTurn) return;
+  if (_resultsShown) return;
 
   const playersData = {};
   playerNames.forEach((name, i) => {

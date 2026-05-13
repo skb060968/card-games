@@ -406,6 +406,7 @@ async function handleWin() {
 async function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
   if (isProcessingFlip) return;
+  if (_resultsShown) return;
 
   const playersData = {};
   playerNames.forEach((name, i) => {

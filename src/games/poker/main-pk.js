@@ -336,6 +336,7 @@ async function handleWin(isFoldWin = false) {
 
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (_resultsShown) return;
 
   const playersData = {};
   playerNames.forEach((name, i) => {

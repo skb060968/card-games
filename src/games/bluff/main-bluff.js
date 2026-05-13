@@ -705,6 +705,9 @@ async function handleWin() {
 
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  // If results screen is already shown, ignore further game-action replays
+  // (e.g. speech/sounds from late listener ticks after Play Again is pressed).
+  if (_resultsShown) return;
 
   const playersData = {};
   playerNames.forEach((name, i) => {
