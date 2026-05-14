@@ -1356,23 +1356,23 @@ body {
 .bl-hand-grid .bl-hand-card {
   width: var(--bl-grid-card-w);
   height: var(--bl-grid-card-h);
-  margin: 2px -7px;
+  margin: 2px var(--bl-grid-card-mx, -7px);
   transition: transform 0.15s, box-shadow 0.15s;
   cursor: default;
   flex-shrink: 0;
 }
 
 .bl-hand-grid .bl-hand-card .card-face {
-  font-size: 0.55rem;
+  font-size: 0.65rem;
 }
 
 .bl-hand-grid .bl-hand-card .card-face .rank-top,
 .bl-hand-grid .bl-hand-card .card-face .rank-bottom {
-  font-size: 0.5rem;
+  font-size: 0.6rem;
 }
 
 .bl-hand-grid .bl-hand-card .card-face .suit-center {
-  font-size: 0.9rem;
+  font-size: 1.05rem;
 }
 
 .bl-hand-card.bl-card-selected {
@@ -2120,6 +2120,32 @@ body {
   white-space: nowrap;
 }
 
+/* Bigger emoji + name for Rummy, Perfect Ten, Poker (more vertical room available) */
+#sr-gameplay .game-block-emoji,
+#pt-gameplay .game-block-emoji,
+#pk-gameplay .game-block-emoji {
+  font-size: 1.6rem;
+}
+
+#sr-gameplay .game-block-name,
+#pt-gameplay .game-block-name,
+#pk-gameplay .game-block-name {
+  font-size: 0.85rem;
+  max-width: 90px;
+}
+
+#sr-gameplay .game-self-emoji,
+#pt-gameplay .game-self-emoji,
+#pk-gameplay .game-self-emoji {
+  font-size: 1.7rem;
+}
+
+#sr-gameplay .game-self-name,
+#pt-gameplay .game-self-name,
+#pk-gameplay .game-self-name {
+  font-size: 1.05rem;
+}
+
 /* Extra info line (e.g. rank count for PT) */
 .game-block-extra {
   font-size: 0.6rem;
@@ -2322,15 +2348,23 @@ body {
 /* Flying coin for bet/call/raise animation */
 .pk-flying-coin {
   position: fixed;
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 300;
   background: radial-gradient(ellipse at 40% 35%, #fff6a0 0%, #ffd700 30%, #daa520 70%, #b8860b 100%);
-  border: 1.5px solid #8b6914;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255,255,255,0.5);
+  border: 2px solid #8b6914;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), inset 0 1px 3px rgba(255,255,255,0.55);
   will-change: left, top, opacity;
+}
+
+/* Chip count beside self name */
+.pk-self-chips {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-left: 4px;
 }
 
 /* Gameplay layout — distributes items evenly across available height */

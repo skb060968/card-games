@@ -96,7 +96,7 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 }
 
 /**
- * Renders the self bar at the bottom with emoji and name.
+ * Renders the self bar at the bottom with emoji, name, and chip count.
  */
 function renderSelfBar(state, localPlayerIndex) {
   const emojiEl = document.getElementById('pk-self-emoji');
@@ -109,6 +109,17 @@ function renderSelfBar(state, localPlayerIndex) {
   nameEl.textContent = self.name;
   if (selfBar) {
     selfBar.classList.toggle('self-bar-active', state.currentPlayerIndex === localPlayerIndex);
+
+    // Render chip count beside the name (matches opponent block visual)
+    const infoEl = selfBar.querySelector('.game-self-info');
+    if (infoEl) {
+      const oldChips = infoEl.querySelector('.pk-self-chips');
+      if (oldChips) oldChips.remove();
+      const chips = document.createElement('span');
+      chips.className = 'pk-self-chips';
+      chips.textContent = `💰${self.chips}`;
+      infoEl.appendChild(chips);
+    }
   }
 }
 

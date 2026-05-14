@@ -360,16 +360,25 @@ function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
 
   const n = hand.length;
 
-  // Responsive card sizing based on hand count
-  let cardW = 38, cardH = 54;
-  if (n <= 10) {
-    cardW = 42; cardH = 59;
-  } else if (n > 26) {
-    cardW = 34; cardH = 48;
+  // Responsive card sizing based on hand count.
+  // Smaller hands → bigger cards (better tap targets).
+  // Larger hands → smaller cards (more rows fit on screen).
+  let cardW, cardH, marginX;
+  if (n <= 13) {
+    // Initial deal (~13 cards for 4 players, ~17 for 3, ~26 for 2): big cards, ~7 per row
+    cardW = 56; cardH = 78; marginX = -3;
+  } else if (n <= 20) {
+    cardW = 48; cardH = 67; marginX = -4;
+  } else if (n <= 30) {
+    cardW = 42; cardH = 59; marginX = -5;
+  } else {
+    // 30+ cards: dense layout
+    cardW = 36; cardH = 51; marginX = -6;
   }
 
   grid.style.setProperty('--bl-grid-card-w', `${cardW}px`);
   grid.style.setProperty('--bl-grid-card-h', `${cardH}px`);
+  grid.style.setProperty('--bl-grid-card-mx', `${marginX}px`);
 
   hand.forEach((card, i) => {
     const cardEl = renderCardFace(card);

@@ -370,6 +370,7 @@ async function handleAction(action) {
 async function handleWin(isFoldWin = false) {
   if (_resultsShown) { renderResults(state, isFoldWin); showScreen('pk-results'); return; }
   _resultsShown = true;
+  const winState = state; // snapshot — abort if state is reset mid-flow
 
   if (state.winnerIndex != null) {
     // Show all hands revealed on the gameplay screen first
@@ -384,13 +385,18 @@ async function handleWin(isFoldWin = false) {
       await new Promise((r) => setTimeout(r, 5000));
     }
 
+    // If state was reset (e.g. host pressed Play Again), abort the rest of the flow
+    if (state !== winState) return;
+
     await announceWin(winner.name);
+    if (state !== winState) return;
     if (typeof confetti === 'function') {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
     coinRain();
   }
 
+  if (state !== winState) return;
   renderResults(state, isFoldWin);
   showScreen('pk-results');
   startReadyListener();
