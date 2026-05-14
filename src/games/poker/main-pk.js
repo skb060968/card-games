@@ -378,6 +378,15 @@ async function handleWin(isFoldWin = false) {
 
     const winner = state.players[state.winnerIndex];
 
+    // Fire-and-forget speech (don't block the flow on speech engine)
+    try { announceWin(winner.name); } catch (_) {}
+
+    // Confetti + coin rain right when winner is revealed
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
+    coinRain();
+
     if (!isFoldWin) {
       // Showdown: display all hands for 5 seconds before results
       playSound('capture');
@@ -387,13 +396,6 @@ async function handleWin(isFoldWin = false) {
 
     // If state was reset (e.g. host pressed Play Again), abort the rest of the flow
     if (state !== winState) return;
-
-    await announceWin(winner.name);
-    if (state !== winState) return;
-    if (typeof confetti === 'function') {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    }
-    coinRain();
   }
 
   if (state !== winState) return;

@@ -2121,6 +2121,14 @@ body {
 }
 
 /* Bigger emoji + name for Rummy, Perfect Ten, Poker (more vertical room available) */
+#sr-gameplay .game-player-block,
+#pt-gameplay .game-player-block,
+#pk-gameplay .game-player-block {
+  padding: 8px 12px;
+  min-width: 84px;
+  gap: 3px;
+}
+
 #sr-gameplay .game-block-emoji,
 #pt-gameplay .game-block-emoji,
 #pk-gameplay .game-block-emoji {
@@ -2132,6 +2140,21 @@ body {
 #pk-gameplay .game-block-name {
   font-size: 0.85rem;
   max-width: 90px;
+}
+
+#sr-gameplay .game-block-extra,
+#pt-gameplay .game-block-extra,
+#pk-gameplay .game-block-extra {
+  font-size: 0.75rem;
+}
+
+/* Bigger face-down card strip in opponent block */
+#sr-gameplay .game-strip-card,
+#pt-gameplay .game-strip-card,
+#pk-gameplay .game-strip-card {
+  width: 26px;
+  height: 36px;
+  margin-left: -10px;
 }
 
 #sr-gameplay .game-self-emoji,

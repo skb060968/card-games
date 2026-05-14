@@ -360,20 +360,13 @@ function renderHand(container, hand, canSelect, inChallengeWindow, onReorder) {
 
   const n = hand.length;
 
-  // Responsive card sizing based on hand count.
-  // Smaller hands → bigger cards (better tap targets).
-  // Larger hands → smaller cards (more rows fit on screen).
+  // Two-tier sizing: bigger cards prioritized over fewer rows.
+  // ≤30 cards → wide (56×78), >30 → comfortable (48×67)
   let cardW, cardH, marginX;
-  if (n <= 13) {
-    // Initial deal (~13 cards for 4 players, ~17 for 3, ~26 for 2): big cards, ~7 per row
+  if (n <= 30) {
     cardW = 56; cardH = 78; marginX = -3;
-  } else if (n <= 20) {
-    cardW = 48; cardH = 67; marginX = -4;
-  } else if (n <= 30) {
-    cardW = 42; cardH = 59; marginX = -5;
   } else {
-    // 30+ cards: dense layout
-    cardW = 36; cardH = 51; marginX = -6;
+    cardW = 48; cardH = 67; marginX = -4;
   }
 
   grid.style.setProperty('--bl-grid-card-w', `${cardW}px`);
