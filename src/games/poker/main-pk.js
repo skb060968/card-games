@@ -204,9 +204,29 @@ function wireLobby() {
       const pd = snap.val();
       const keys = Object.keys(pd).sort();
       const infos = keys.map((k) => ({ name: pd[k].name || 'Unknown', emoji: pd[k].emoji || '😀' }));
-      state = createGame(infos);
+
+      // For Play Again rounds, carry forward each player's chip balance from the previous game.
+      // Read the existing balance from Firebase (saved on previous resetRoom).
+      let existingChips;
+      try {
+        const balSnap = await firebaseRetry(() => get(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/balances`)));
+        if (balSnap.exists()) {
+          const balData = balSnap.val();
+          existingChips = keys.map((k) => (balData[k] != null ? balData[k] : undefined));
+          // If every entry is undefined, treat as fresh start
+          if (existingChips.every((c) => c == null)) existingChips = undefined;
+        }
+      } catch (_) {}
+
+      state = createGame(infos, existingChips);
       await writeFullState(state, null);
       startGame();
+
+      // If only 1 non-broke player remains, the round is already finished.
+      // Skip straight to results so the lone player sees they win by default.
+      if (state.status === 'finished') {
+        handleWin(true);
+      }
     } catch (err) { console.error(err); showToast('Failed to start game.'); }
   });
 
@@ -232,6 +252,9 @@ function startGame() {
 
 function renderUI() {
   if (!state) return;
+  // Don't re-render the gameplay screen once the game is over —
+  // results screen takes over and we don't want a face-up showdown flash.
+  if (state.status === 'finished') return;
   renderGameplay(state, playerIndex, {
     onAction: (action) => handleAction(action),
   });
@@ -301,6 +324,7 @@ function getOpponentBlockRect(pIdx) {
 async function handleAction(action) {
   if (!state || state.status !== 'betting') return;
   if (state.currentPlayerIndex !== playerIndex) return;
+  if (state.players[playerIndex].broke) return;
 
   warmSpeech();
 
@@ -367,7 +391,7 @@ async function handleAction(action) {
 
 /* ======= WIN HANDLING ======= */
 
-async function handleWin(isFoldWin = false) {
+function handleWin(isFoldWin = false) {
   if (_resultsShown) { renderResults(state, isFoldWin); showScreen('pk-results'); return; }
   _resultsShown = true;
 
@@ -376,14 +400,15 @@ async function handleWin(isFoldWin = false) {
     // Fire-and-forget speech (don't block on speech engine)
     try { announceWin(winner.name); } catch (_) {}
     if (typeof confetti === 'function') {
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch (_) {}
     }
-    coinRain();
+    try { coinRain(); } catch (_) {}
   }
 
-  renderResults(state, isFoldWin);
-  showScreen('pk-results');
-  startReadyListener();
+  // Always advance to results screen, even if rendering throws.
+  try { renderResults(state, isFoldWin); } catch (err) { console.error('renderResults error:', err); }
+  try { showScreen('pk-results'); } catch (err) { console.error('showScreen error:', err); }
+  try { startReadyListener(); } catch (err) { console.error('startReadyListener error:', err); }
 }
 
 /* ======= REMOTE UPDATES ======= */
@@ -401,6 +426,24 @@ function handleRemoteUpdate(gameData, lastMove) {
   });
 
   const newState = deserializeState(gameData, playersData);
+
+  // If the new state shows the game has finished, ALWAYS go straight to the
+  // results screen — regardless of any speech / confetti / animation issues
+  // that might block parts of handleWin.
+  if (newState.status === 'finished') {
+    state = newState;
+    const isFoldWin = lastMove && lastMove.action === 'fold';
+    handleWin(isFoldWin);
+    // Defensive belt-and-braces: if for any reason handleWin didn't switch
+    // screens, force it now.
+    if (!_resultsShown) {
+      try { renderResults(state, isFoldWin); } catch (_) {}
+      try { showScreen('pk-results'); } catch (_) {}
+      try { startReadyListener(); } catch (_) {}
+      _resultsShown = true;
+    }
+    return;
+  }
 
   // Detect remote action
   if (lastMove && lastMove.playerIndex !== playerIndex) {
@@ -438,12 +481,7 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   state = newState;
 
-  if (state.status === 'finished') {
-    const isFoldWin = lastMove && lastMove.action === 'fold';
-    handleWin(isFoldWin);
-    return;
-  }
-
+  // status === 'finished' was already handled at the top of this function.
   renderUI();
 }
 
@@ -480,6 +518,16 @@ function wireResults() {
         btnAgain.dataset.hostReady = '';
         btnAgain.dataset.playerReady = '';
         btnAgain.textContent = 'Play Again';
+
+        // Save current chip balances so the next round carries them forward
+        if (state && state.players && roomCode) {
+          const balances = {};
+          state.players.forEach((p, i) => { balances[`player_${i}`] = p.chips; });
+          try {
+            await update(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`), { balances });
+          } catch (_) {}
+        }
+
         state = null;
         if (roomCode) { try { await resetRoom(GAME_ID, roomCode); } catch (e) { showToast('Failed to reset.'); } }
         setupLobby();

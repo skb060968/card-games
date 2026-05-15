@@ -64,7 +64,8 @@ function renderAllPlayers(container, state, localPlayerIndex) {
     block.className = 'game-player-block';
     block.dataset.playerIndex = String(i);
     if (i === state.currentPlayerIndex) block.classList.add('game-block-active');
-    if (player.folded) block.style.opacity = '0.4';
+    if (player.folded && !player.broke) block.style.opacity = '0.4';
+    if (player.broke) block.classList.add('pk-broke');
 
     const emoji = document.createElement('span');
     emoji.className = 'game-block-emoji';
@@ -76,11 +77,18 @@ function renderAllPlayers(container, state, localPlayerIndex) {
 
     const strip = document.createElement('div');
     strip.className = 'game-card-strip';
-    const count = player.hand ? player.hand.length : 3;
-    for (let c = 0; c < count; c++) {
-      const miniCard = document.createElement('div');
-      miniCard.className = 'game-strip-card';
-      strip.appendChild(miniCard);
+    if (!player.broke) {
+      const count = player.hand ? player.hand.length : 3;
+      for (let c = 0; c < count; c++) {
+        const miniCard = document.createElement('div');
+        miniCard.className = 'game-strip-card';
+        strip.appendChild(miniCard);
+      }
+    } else {
+      const brokeBadge = document.createElement('span');
+      brokeBadge.className = 'pk-broke-badge';
+      brokeBadge.textContent = 'BROKE';
+      strip.appendChild(brokeBadge);
     }
 
     const chipsBadge = document.createElement('span');
@@ -228,7 +236,12 @@ function renderActions(container, state, localPlayerIndex, callbacks) {
   const player = state.players[localPlayerIndex];
 
   if (state.status !== 'betting' || !isMyTurn || player.folded) {
-    if (state.status === 'betting' && !player.folded) {
+    if (player.broke) {
+      const brokeText = document.createElement('p');
+      brokeText.className = 'pk-wait-text';
+      brokeText.textContent = 'You are out of chips — sitting out this round';
+      container.appendChild(brokeText);
+    } else if (state.status === 'betting' && !player.folded) {
       const waitText = document.createElement('p');
       waitText.className = 'pk-wait-text';
       const currentName = state.players[state.currentPlayerIndex]?.name || 'Opponent';
@@ -379,8 +392,9 @@ export function renderResults(state, isFoldWin = false) {
       display.appendChild(emojiEl);
       display.appendChild(nameEl);
 
-      // Show pot won as coin stack (chips gained = winner.chips - 200 starting)
-      const potWon = winner.chips - 200;
+      // Pot won this round = chips gained over the round start balance
+      const startChips = winner.roundStartChips != null ? winner.roundStartChips : 200;
+      const potWon = winner.chips - startChips;
       if (potWon > 0) {
         display.appendChild(renderPotDisplay(potWon));
       }
@@ -428,7 +442,12 @@ export function renderResults(state, isFoldWin = false) {
 
       // Always reveal everyone's cards on results screen — players want to see
       // what others held, both on a Show win and a Fold win.
-      if (!player.folded && player.hand && player.hand.length === 3) {
+      if (player.broke) {
+        const brokeNote = document.createElement('div');
+        brokeNote.className = 'pk-results-folded';
+        brokeNote.textContent = '— broke, sat out —';
+        li.appendChild(brokeNote);
+      } else if (!player.folded && player.hand && player.hand.length === 3) {
         const handRow = document.createElement('div');
         handRow.className = 'pk-results-hand';
         player.hand.forEach((card) => {

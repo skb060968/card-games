@@ -2368,6 +2368,23 @@ body {
    POKER — GAMEPLAY STYLES
    ========================================================= */
 
+/* Broke player styling */
+.game-player-block.pk-broke {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+.pk-broke-badge {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--color-error);
+  background: rgba(231, 76, 60, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  letter-spacing: 0.5px;
+}
+
 /* Flying coin for bet/call/raise animation */
 .pk-flying-coin {
   position: fixed;

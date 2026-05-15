@@ -40,9 +40,12 @@ const STARTING_CHIPS = 200;
 /**
  * Creates initial Poker game state.
  * @param {Array<{name: string, emoji: string}>} playerInfos — 2 to 4 players
+ * @param {number[]} [existingChips] — optional array of chip balances to carry forward.
+ *   If provided, players use their existing chip balance; otherwise STARTING_CHIPS.
+ *   Players with chips < BET_AMOUNT (10) are marked broke and not dealt cards.
  * @returns {object} GameState
  */
-export function createGame(playerInfos) {
+export function createGame(playerInfos, existingChips) {
   const n = playerInfos.length;
   if (n < 2 || n > 4) {
     throw new Error(`Invalid player count: ${n}. Must be 2-4 players.`);
@@ -51,22 +54,61 @@ export function createGame(playerInfos) {
   const deck = createDeck();
   shuffle(deck);
 
-  // Deal 3 cards to each player
-  const players = playerInfos.map((info, i) => ({
-    name: info.name,
-    emoji: info.emoji,
-    hand: deck.slice(i * 3, i * 3 + 3),
-    chips: STARTING_CHIPS,
-    currentBet: 0,
-    folded: false,
-    hasActed: false,
-    connected: true,
-  }));
+  // Determine each player's starting chips and broke status for this round
+  const chipsByIdx = playerInfos.map((_, i) => {
+    const c = existingChips && existingChips[i] != null ? existingChips[i] : STARTING_CHIPS;
+    return Math.max(0, c);
+  });
+
+  // Deal 3 cards only to players with enough chips to bet
+  let dealCursor = 0;
+  const players = playerInfos.map((info, i) => {
+    const chips = chipsByIdx[i];
+    const broke = chips < BET_AMOUNT;
+    let hand = [];
+    if (!broke) {
+      hand = deck.slice(dealCursor * 3, dealCursor * 3 + 3);
+      dealCursor++;
+    }
+    return {
+      name: info.name,
+      emoji: info.emoji,
+      hand,
+      chips,
+      currentBet: 0,
+      folded: broke,    // broke players auto-fold for the round
+      hasActed: broke,  // broke players are pre-acted (won't be picked as current)
+      broke,
+      roundStartChips: chips,  // remember balance at start of round
+      connected: true,
+    };
+  });
+
+  // Pick the first non-broke player as starting player
+  let firstPlayer = 0;
+  for (let i = 0; i < players.length; i++) {
+    if (!players[i].broke) { firstPlayer = i; break; }
+  }
+
+  // Count non-broke players. If fewer than 2, the round can't start —
+  // mark the game as finished with the lone non-broke player as overall winner
+  // (or no winner if all are broke).
+  const nonBrokeCount = players.filter((p) => !p.broke).length;
+  if (nonBrokeCount < 2) {
+    return {
+      players,
+      pot: 0,
+      currentPlayerIndex: firstPlayer,
+      status: 'finished',
+      winnerIndex: nonBrokeCount === 1 ? firstPlayer : null,
+      showEligible: false,
+    };
+  }
 
   return {
     players,
     pot: 0,
-    currentPlayerIndex: 0,
+    currentPlayerIndex: firstPlayer,
     status: 'betting',
     winnerIndex: null,
     showEligible: false,
@@ -439,7 +481,11 @@ export function resolveShow(state) {
  */
 export function validateState(state) {
   const n = state.players.length;
-  const expectedTotal = STARTING_CHIPS * n;
+  // Use roundStartChips if available (carry-forward play); fall back to STARTING_CHIPS otherwise.
+  const expectedTotal = state.players.reduce(
+    (sum, p) => sum + (p.roundStartChips != null ? p.roundStartChips : STARTING_CHIPS),
+    0
+  );
 
   // Chip conservation
   let totalChips = state.pot;
@@ -450,10 +496,11 @@ export function validateState(state) {
     return { valid: false, error: `Chip count mismatch: expected ${expectedTotal}, found ${totalChips}` };
   }
 
-  // Hand sizes
+  // Hand sizes — broke players have 0 cards, others have 3
   for (let i = 0; i < n; i++) {
-    if (state.players[i].hand.length !== 3) {
-      return { valid: false, error: `Player ${i} has ${state.players[i].hand.length} cards, expected 3` };
+    const expected = state.players[i].broke ? 0 : 3;
+    if (state.players[i].hand.length !== expected) {
+      return { valid: false, error: `Player ${i} has ${state.players[i].hand.length} cards, expected ${expected}` };
     }
   }
 
@@ -485,6 +532,8 @@ export function serializeState(state) {
   const currentBets = {};
   const folded = {};
   const hasActed = {};
+  const broke = {};
+  const roundStartChips = {};
 
   state.players.forEach((p, i) => {
     const key = `player_${i}`;
@@ -493,6 +542,8 @@ export function serializeState(state) {
     currentBets[key] = p.currentBet;
     folded[key] = p.folded;
     hasActed[key] = p.hasActed;
+    broke[key] = p.broke || false;
+    roundStartChips[key] = p.roundStartChips != null ? p.roundStartChips : p.chips;
   });
 
   return {
@@ -501,6 +552,8 @@ export function serializeState(state) {
     currentBets,
     folded,
     hasActed,
+    broke,
+    roundStartChips,
     pot: state.pot,
     currentPlayerIndex: state.currentPlayerIndex,
     status: state.status,
@@ -532,6 +585,10 @@ export function deserializeState(gameData, playersData) {
       currentBet: (gameData.currentBets && gameData.currentBets[key]) || 0,
       folded: (gameData.folded && gameData.folded[key]) || false,
       hasActed: (gameData.hasActed && gameData.hasActed[key]) || false,
+      broke: (gameData.broke && gameData.broke[key]) || false,
+      roundStartChips: (gameData.roundStartChips && gameData.roundStartChips[key]) != null
+        ? gameData.roundStartChips[key]
+        : ((gameData.chips && gameData.chips[key]) != null ? gameData.chips[key] : STARTING_CHIPS),
       connected: pData.connected !== false,
     };
   });
