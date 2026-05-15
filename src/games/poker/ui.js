@@ -410,15 +410,60 @@ export function renderResults(state, isFoldWin = false) {
 
   if (resultsList) {
     resultsList.innerHTML = '';
-    state.players.forEach((player) => {
+    state.players.forEach((player, i) => {
       const li = document.createElement('li');
+      li.className = 'pk-results-row';
+
+      const top = document.createElement('div');
+      top.className = 'pk-results-top';
+
       const nameSpan = document.createElement('span');
       nameSpan.textContent = `${player.emoji} ${player.name}`;
       const chipsSpan = document.createElement('span');
       chipsSpan.className = 'bounty-value';
       chipsSpan.textContent = `💰 ${player.chips} chips`;
-      li.appendChild(nameSpan);
-      li.appendChild(chipsSpan);
+      top.appendChild(nameSpan);
+      top.appendChild(chipsSpan);
+      li.appendChild(top);
+
+      // Always reveal everyone's cards on results screen — players want to see
+      // what others held, both on a Show win and a Fold win.
+      if (!player.folded && player.hand && player.hand.length === 3) {
+        const handRow = document.createElement('div');
+        handRow.className = 'pk-results-hand';
+        player.hand.forEach((card) => {
+          const cardEl = renderCardFace(card);
+          cardEl.style.cursor = 'default';
+          cardEl.classList.add('pk-results-card');
+          handRow.appendChild(cardEl);
+        });
+        // Hand rank label
+        try {
+          const eval_ = evaluateHand(player.hand);
+          const rankSpan = document.createElement('span');
+          rankSpan.className = 'pk-results-rank';
+          if (i === state.winnerIndex) rankSpan.classList.add('pk-results-rank-winner');
+          rankSpan.textContent = eval_.label;
+          handRow.appendChild(rankSpan);
+        } catch (_) {}
+        li.appendChild(handRow);
+      } else if (player.folded && player.hand && player.hand.length === 3) {
+        // Folded players: also reveal their hand for curiosity, with a folded marker
+        const handRow = document.createElement('div');
+        handRow.className = 'pk-results-hand pk-results-hand-folded';
+        player.hand.forEach((card) => {
+          const cardEl = renderCardFace(card);
+          cardEl.style.cursor = 'default';
+          cardEl.classList.add('pk-results-card');
+          handRow.appendChild(cardEl);
+        });
+        const foldedTag = document.createElement('span');
+        foldedTag.className = 'pk-results-rank pk-results-folded-tag';
+        foldedTag.textContent = 'Folded';
+        handRow.appendChild(foldedTag);
+        li.appendChild(handRow);
+      }
+
       resultsList.appendChild(li);
     });
   }

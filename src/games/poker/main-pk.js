@@ -370,61 +370,20 @@ async function handleAction(action) {
 async function handleWin(isFoldWin = false) {
   if (_resultsShown) { renderResults(state, isFoldWin); showScreen('pk-results'); return; }
   _resultsShown = true;
-  const winState = state; // snapshot — abort if state is reset mid-flow
 
-  // Hard fallback: force-show results after max 6 seconds even if anything hangs above.
-  const fallbackTimer = setTimeout(() => {
-    if (state === winState) {
-      try { renderResults(state, isFoldWin); showScreen('pk-results'); startReadyListener(); } catch (_) {}
+  if (state.winnerIndex != null) {
+    const winner = state.players[state.winnerIndex];
+    // Fire-and-forget speech (don't block on speech engine)
+    try { announceWin(winner.name); } catch (_) {}
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
-  }, 6000);
-
-  try {
-    if (state.winnerIndex != null) {
-      // Show all hands revealed on the gameplay screen first
-      renderUI();
-
-      const winner = state.players[state.winnerIndex];
-
-      // Fire-and-forget speech (don't block the flow on speech engine)
-      try { announceWin(winner.name); } catch (_) {}
-
-      // Confetti + coin rain right when winner is revealed
-      if (typeof confetti === 'function') {
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      }
-      coinRain();
-
-      if (!isFoldWin) {
-        // Showdown: display all hands for 5 seconds before results
-        playSound('capture');
-        setEventMessage(`🏆 ${winner.emoji} ${winner.name} wins with ${(() => { try { return evaluateHand(winner.hand).label; } catch (_) { return ''; } })()}!`);
-        await new Promise((r) => setTimeout(r, 5000));
-      }
-
-      // If state was reset (e.g. host pressed Play Again), abort the rest of the flow
-      if (state !== winState) {
-        clearTimeout(fallbackTimer);
-        return;
-      }
-    }
-
-    if (state !== winState) {
-      clearTimeout(fallbackTimer);
-      return;
-    }
-    clearTimeout(fallbackTimer);
-    renderResults(state, isFoldWin);
-    showScreen('pk-results');
-    startReadyListener();
-  } catch (err) {
-    console.error('handleWin error:', err);
-    clearTimeout(fallbackTimer);
-    // Force-show results on error
-    if (state === winState) {
-      try { renderResults(state, isFoldWin); showScreen('pk-results'); startReadyListener(); } catch (_) {}
-    }
+    coinRain();
   }
+
+  renderResults(state, isFoldWin);
+  showScreen('pk-results');
+  startReadyListener();
 }
 
 /* ======= REMOTE UPDATES ======= */
@@ -481,11 +440,7 @@ function handleRemoteUpdate(gameData, lastMove) {
 
   if (state.status === 'finished') {
     const isFoldWin = lastMove && lastMove.action === 'fold';
-    handleWin(isFoldWin).catch((err) => {
-      console.error('handleWin failed on remote:', err);
-      // Fallback: force results screen so player isn't stuck on showdown
-      try { renderResults(state, isFoldWin); showScreen('pk-results'); startReadyListener(); } catch (_) {}
-    });
+    handleWin(isFoldWin);
     return;
   }
 
