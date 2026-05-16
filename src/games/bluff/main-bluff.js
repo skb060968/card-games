@@ -416,6 +416,14 @@ function startGame() {
   showScreen('bl-gameplay');
   const endBtn = document.getElementById('bl-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
+  // Reset Play Again button state for the new round
+  const btnAgain = document.getElementById('bl-btn-play-again');
+  if (btnAgain) {
+    btnAgain.dataset.hostReady = '';
+    btnAgain.dataset.playerReady = '';
+    btnAgain.disabled = false;
+    btnAgain.textContent = 'Play Again';
+  }
   hideRankSelector();
   clearSelection();
   setEventMessage('');

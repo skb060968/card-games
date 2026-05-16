@@ -460,6 +460,14 @@ function startOnlineGame() {
 
   if (btnEndGame) btnEndGame.hidden = !isHost;
 
+  // Reset Play Again button state for the new round
+  if (btnPlayAgain) {
+    btnPlayAgain.dataset.hostReady = '';
+    btnPlayAgain.dataset.playerReady = '';
+    btnPlayAgain.disabled = false;
+    btnPlayAgain.textContent = 'Play Again';
+  }
+
   renderGameplay(state, playerIndex);
   isProcessingTurn = false;
 }

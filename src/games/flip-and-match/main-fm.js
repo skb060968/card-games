@@ -262,6 +262,14 @@ function startGame() {
   showScreen('fm-gameplay');
   const endBtn = document.getElementById('fm-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
+  // Reset Play Again button state for the new round
+  const btnAgain = document.getElementById('fm-btn-play-again');
+  if (btnAgain) {
+    btnAgain.dataset.hostReady = '';
+    btnAgain.dataset.playerReady = '';
+    btnAgain.disabled = false;
+    btnAgain.textContent = 'Play Again';
+  }
   setEventMessage('');
   isProcessingFlip = false;
   renderUI();

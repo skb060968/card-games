@@ -246,6 +246,15 @@ function startGame() {
   showScreen('pk-gameplay');
   const endBtn = document.getElementById('pk-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
+  // Reset Play Again button state for the new round (clears stale ready/disabled
+  // from a previous round that this client clicked through).
+  const btnAgain = document.getElementById('pk-btn-play-again');
+  if (btnAgain) {
+    btnAgain.dataset.hostReady = '';
+    btnAgain.dataset.playerReady = '';
+    btnAgain.disabled = false;
+    btnAgain.textContent = 'Play Again';
+  }
   setEventMessage('');
   renderUI();
 }
