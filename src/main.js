@@ -325,7 +325,7 @@ function setupLobby() {
     },
 
     onStatusChange: async (status) => {
-      if (status === 'active' && !isHost) {
+      if (status === 'active' && !isHost && state == null) {
         try {
           const roomRef = ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`);
           const snapshot = await firebaseRetry(() => get(roomRef));
