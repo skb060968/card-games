@@ -21,8 +21,8 @@ import {
 } from 'firebase/database';
 import { serializeCard, deserializeCard } from '../shared/deck.js';
 
-/** Characters used for room codes — excludes ambiguous 0, O, I, l, 1 */
-const ROOM_CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/** Characters used for room codes — letters only, excludes ambiguous I and O */
+const ROOM_CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 /**
  * Retry wrapper for Firebase write operations with exponential backoff.
