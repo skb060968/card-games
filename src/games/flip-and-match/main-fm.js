@@ -37,6 +37,7 @@ import {
   joinRoom,
   listenRoom,
   setupDisconnectHandler,
+  removePlayer,
   endRoom,
   deleteRoom,
   resetRoom,
@@ -249,7 +250,7 @@ function wireLobby() {
   if (leaveBtn) leaveBtn.addEventListener('click', async () => {
     if (isHost && roomCode) { try { await deleteRoom(GAME_ID, roomCode); } catch (_) {} }
     else if (roomCode && playerIndex != null) {
-      try { await remove(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/players/player_${playerIndex}`)); } catch (_) {}
+      try { await removePlayer(GAME_ID, roomCode, playerIndex); } catch (_) {}
     }
     cleanupAndGoHome();
   });

@@ -121,14 +121,27 @@ export async function joinRoom(gameId, roomCode, playerName, playerEmoji) {
     return { success: false, reason: 'Game already in progress' };
   }
 
-  // Check player count
+  // Check player count. A "ghost" slot is one with no name (only a leftover
+  // `connected:false` written by a stale onDisconnect after a player left).
+  // Filter ghosts from the index calculation and clean them up so the lobby
+  // doesn't show empty cards.
   const players = data.players || {};
-  const existingIndices = Object.keys(players)
+  const ghostKeys = Object.keys(players).filter((k) => !players[k] || !players[k].name);
+  const validKeys = Object.keys(players).filter((k) => players[k] && players[k].name);
+  const existingIndices = validKeys
     .map((key) => parseInt(key.replace('player_', ''), 10))
     .filter((n) => !isNaN(n));
 
   if (existingIndices.length >= 6) {
     return { success: false, reason: 'Room is full' };
+  }
+
+  if (ghostKeys.length > 0) {
+    try {
+      const cleanup = {};
+      ghostKeys.forEach((k) => { cleanup[`players/${k}`] = null; });
+      await update(ref(db, `card-games/${gameId}-rooms/${roomCode}`), cleanup);
+    } catch (_) {}
   }
 
   const nextIndex = existingIndices.length > 0 ? Math.max(...existingIndices) + 1 : 0;
@@ -290,6 +303,24 @@ export function setupDisconnectHandler(gameId, roomCode, playerIndex) {
     .catch((err) => {
       console.warn('Warning: onDisconnect setup failed:', err.message);
     });
+}
+
+/**
+ * Removes a player from a room. Cancels the queued onDisconnect first so
+ * it doesn't fire after the page closes and recreate a ghost slot.
+ * @param {string} gameId - Game identifier (e.g. 'patte-par-patta')
+ * @param {string} roomCode - The room code
+ * @param {number} playerIndex - The player index
+ */
+export async function removePlayer(gameId, roomCode, playerIndex) {
+  const connectedRef = ref(
+    db,
+    `card-games/${gameId}-rooms/${roomCode}/players/player_${playerIndex}/connected`
+  );
+  try { await onDisconnect(connectedRef).cancel(); } catch (_) {}
+  await firebaseRetry(() =>
+    remove(ref(db, `card-games/${gameId}-rooms/${roomCode}/players/player_${playerIndex}`))
+  );
 }
 
 /**

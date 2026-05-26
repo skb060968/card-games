@@ -44,6 +44,7 @@ import {
   writeThrow,
   writeGameState,
   setupDisconnectHandler,
+  removePlayer,
   endRoom,
   deleteRoom,
   resetRoom,
@@ -441,10 +442,8 @@ function wireLobby() {
       if (isHost && roomCode) {
         try { await deleteRoom(GAME_ID, roomCode); } catch (_) {}
       } else if (roomCode && playerIndex != null) {
-        try {
-          const playerRef = ref(db, `card-games/${GAME_ID}-rooms/${roomCode}/players/player_${playerIndex}`);
-          await remove(playerRef);
-        } catch (_) {}
+        // Cancels the queued onDisconnect first to avoid recreating a ghost slot
+        try { await removePlayer(GAME_ID, roomCode, playerIndex); } catch (_) {}
       }
       cleanupAndGoHome();
     });
