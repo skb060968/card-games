@@ -319,7 +319,8 @@ function setupLobby() {
 
   unsubscribeRoom = listenRoom(GAME_ID, roomCode, {
     onPlayersChange: (players) => {
-      const keys = Object.keys(players).sort();
+      // Filter out ghost players (no name)
+      const keys = Object.keys(players).filter((k) => players[k] && players[k].name).sort();
       const playerArr = keys.map((k) => players[k]);
       playerNames = playerArr.map((p) => p.name || 'Unknown');
       renderLobbyPlayers(playerArr, isHost);
@@ -415,7 +416,9 @@ function wireLobby() {
         }
 
         const playersData = snapshot.val();
-        const playerKeys = Object.keys(playersData).sort();
+        const playerKeys = Object.keys(playersData)
+          .filter((k) => playersData[k] && playersData[k].name)
+          .sort();
         const playerInfos = playerKeys.map((key) => ({
           name: playersData[key].name || 'Unknown',
           emoji: playersData[key].emoji || '😀',
@@ -925,7 +928,9 @@ async function checkSession() {
     isHost = session.isHost;
 
     if (roomData.players) {
-      const keys = Object.keys(roomData.players).sort();
+      const keys = Object.keys(roomData.players)
+        .filter((k) => roomData.players[k] && roomData.players[k].name)
+        .sort();
       playerNames = keys.map((k) => roomData.players[k].name || 'Unknown');
     }
 
@@ -949,7 +954,9 @@ async function checkSession() {
       if (unsubscribeRoom) unsubscribeRoom();
       unsubscribeRoom = listenRoom(GAME_ID, roomCode, {
         onPlayersChange: (players) => {
-          const keys = Object.keys(players).sort();
+          const keys = Object.keys(players)
+            .filter((k) => players[k] && players[k].name)
+            .sort();
           playerNames = keys.map((k) => players[k].name || 'Unknown');
         },
         onStatusChange: async (newStatus) => {
