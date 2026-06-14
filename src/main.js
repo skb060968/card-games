@@ -378,7 +378,7 @@ function wireLobby() {
   if (btnShareCode) {
     btnShareCode.addEventListener('click', () => {
       if (roomCode) {
-        createShareHandler(roomCode, 'Card Games', 'patte-par-patta')();
+        createShareHandler(roomCode, 'Patte Par Patta', 'patte-par-patta')();
       }
     });
   }

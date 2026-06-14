@@ -78,32 +78,6 @@ export function initDeepLinkHandler({ roomInputId, joinScreenId, gameName, gameI
     gameId: urlGameId || gameId
   };
 }
-  
-  // Auto-fill room code
-  const roomInput = document.getElementById(roomInputId);
-  if (roomInput) {
-    roomInput.value = urlRoomCode.toUpperCase();
-  }
-  
-  // Show join screen if provided
-  if (joinScreenId) {
-    const screen = document.getElementById(joinScreenId);
-    if (screen) {
-      screen.removeAttribute('hidden');
-    }
-  }
-  
-  showToast('Room code filled from link!');
-  
-  // Check if opened in browser (not PWA) and show app banner
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
-  if (!isPWA) {
-    // Show banner after a short delay so user sees the screen first
-    setTimeout(() => showAppBanner(gameName), 800);
-  }
-  
-  return urlRoomCode.toUpperCase();
-}
 
 /**
  * Create a share handler function for share buttons
