@@ -6,6 +6,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
+import { createShareHandler } from '../../deep-link-handler.js';
 import {
   createGame,
   drawCard,
@@ -250,11 +251,8 @@ function setupLobby() {
 function wireLobby() {
   // Share code
   const shareBtn = document.getElementById('pt-btn-share-code');
-  if (shareBtn) shareBtn.addEventListener('click', async () => {
-    if (!roomCode) return;
-    const text = `Join my Perfect Ten room! Code: ${roomCode}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Perfect Ten', text, url: location.origin }); return; } catch (_) {} }
-    try { await navigator.clipboard.writeText(`${text}\n${location.origin}`); showToast('Room code copied!'); } catch (_) { showToast(`Room code: ${roomCode}`); }
+  if (shareBtn) shareBtn.addEventListener('click', () => {
+    if (roomCode) createShareHandler(roomCode, 'Perfect Ten', 'perfect-ten')();
   });
 
   // Start game (host)

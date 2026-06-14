@@ -6,6 +6,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
+import { createShareHandler } from '../../deep-link-handler.js';
 import {
   createGame,
   performAction,
@@ -190,11 +191,8 @@ function setupLobby() {
 function wireLobby() {
   // Share code
   const shareBtn = document.getElementById('pk-btn-share-code');
-  if (shareBtn) shareBtn.addEventListener('click', async () => {
-    if (!roomCode) return;
-    const text = `Join my Poker room! Code: ${roomCode}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Poker', text, url: location.origin }); return; } catch (_) {} }
-    try { await navigator.clipboard.writeText(`${text}\n${location.origin}`); showToast('Room code copied!'); } catch (_) { showToast(`Room code: ${roomCode}`); }
+  if (shareBtn) shareBtn.addEventListener('click', () => {
+    if (roomCode) createShareHandler(roomCode, 'Poker', 'poker')();
   });
 
   // Start game (host)

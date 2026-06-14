@@ -7,6 +7,7 @@
  */
 
 import { showScreen, renderLandingPage, showToast } from './platform-ui.js';
+import { initDeepLinkHandler, createShareHandler } from './deep-link-handler.js';
 
 import {
   createGame,
@@ -375,23 +376,9 @@ function wireLobby() {
   // Share Code
   const btnShareCode = document.getElementById('btn-share-code');
   if (btnShareCode) {
-    btnShareCode.addEventListener('click', async () => {
-      if (!roomCode) return;
-      const shareText = `Join my Card Games room! Room code: ${roomCode}`;
-      const shareUrl = window.location.origin;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'Card Games', text: shareText, url: shareUrl });
-          return;
-        } catch (_) {}
-      }
-
-      try {
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        showToast('Room code copied!');
-      } catch (_) {
-        showToast(`Room code: ${roomCode}`);
+    btnShareCode.addEventListener('click', () => {
+      if (roomCode) {
+        createShareHandler(roomCode, 'Card Games', 'patte-par-patta')();
       }
     });
   }
@@ -1048,6 +1035,13 @@ function showUpdateToast(registration) {
 /* ======= INITIALIZATION ======= */
 
 async function init() {
+  // Check for deep link with room code and optional game ID
+  const deepLinkData = initDeepLinkHandler({
+    roomInputId: 'room-code-input',
+    joinScreenId: 'ppp-join-room',
+    gameName: 'Card Games'
+  });
+
   initAudio();
 
   wireCreateRoom();
@@ -1068,6 +1062,29 @@ async function init() {
   initPoker(showLandingPage);
 
   registerServiceWorker();
+
+  // If deep link has game ID, route to correct game's join screen
+  if (deepLinkData && deepLinkData.gameId) {
+    const gameIdMapping = {
+      'patte-par-patta': { screen: 'ppp-join-room', inputId: 'room-code-input' },
+      'simple-rummy': { screen: 'sr-join-room', inputId: 'sr-join-code' },
+      'bluff': { screen: 'bl-join-room', inputId: 'bl-join-code' },
+      'flip-and-match': { screen: 'fm-join-room', inputId: 'fm-join-code' },
+      'perfect-ten': { screen: 'pt-join-room', inputId: 'pt-join-code' },
+      'poker': { screen: 'pk-join-room', inputId: 'pk-join-code' }
+    };
+    
+    const gameInfo = gameIdMapping[deepLinkData.gameId];
+    if (gameInfo) {
+      // Auto-fill the correct game's join input
+      const input = document.getElementById(gameInfo.inputId);
+      if (input) input.value = deepLinkData.roomCode;
+      
+      // Show the correct game's join screen
+      showScreen(gameInfo.screen);
+      return; // Skip session check, user is joining via link
+    }
+  }
 
   const rejoined = await checkSession();
 

@@ -8,6 +8,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
+import { createShareHandler } from '../../deep-link-handler.js';
 import {
   createGame,
   placeCards,
@@ -376,11 +377,8 @@ function setupLobby() {
 function wireLobby() {
   // Share code
   const shareBtn = document.getElementById('bl-btn-share-code');
-  if (shareBtn) shareBtn.addEventListener('click', async () => {
-    if (!roomCode) return;
-    const text = `Join my Bluff room! Code: ${roomCode}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Bluff', text, url: location.origin }); return; } catch (_) {} }
-    try { await navigator.clipboard.writeText(`${text}\n${location.origin}`); showToast('Room code copied!'); } catch (_) { showToast(`Room code: ${roomCode}`); }
+  if (shareBtn) shareBtn.addEventListener('click', () => {
+    if (roomCode) createShareHandler(roomCode, 'Bluff', 'bluff')();
   });
 
   // Start game (host)

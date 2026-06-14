@@ -7,6 +7,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
+import { createShareHandler } from '../../deep-link-handler.js';
 import {
   createGame,
   flipCard,
@@ -215,14 +216,8 @@ function setupLobby() {
 function wireLobby() {
   // Share code
   const shareBtn = document.getElementById('fm-btn-share-code');
-  if (shareBtn) shareBtn.addEventListener('click', async () => {
-    if (!roomCode) return;
-    const text = `Join my Flip & Match room! Code: ${roomCode}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Flip & Match', text, url: location.origin }); return; } catch (_) {}
-    }
-    try { await navigator.clipboard.writeText(`${text}\n${location.origin}`); showToast('Room code copied!'); }
-    catch (_) { showToast(`Room code: ${roomCode}`); }
+  if (shareBtn) shareBtn.addEventListener('click', () => {
+    if (roomCode) createShareHandler(roomCode, 'Flip & Match', 'flip-and-match')();
   });
 
   // Start game (host)
