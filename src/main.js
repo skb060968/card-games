@@ -1068,11 +1068,11 @@ async function init() {
   if (deepLinkData && deepLinkData.gameId) {
     const gameIdMapping = {
       'patte-par-patta': { screen: 'ppp-join-room', inputId: 'room-code-input' },
-      'simple-rummy': { screen: 'sr-join-room', inputId: 'sr-join-code' },
-      'bluff': { screen: 'bl-join-room', inputId: 'bl-join-code' },
-      'flip-and-match': { screen: 'fm-join-room', inputId: 'fm-join-code' },
-      'perfect-ten': { screen: 'pt-join-room', inputId: 'pt-join-code' },
-      'poker': { screen: 'pk-join-room', inputId: 'pk-join-code' }
+      'simple-rummy': { screen: 'sr-join-room', inputId: 'sr-room-code' },
+      'bluff': { screen: 'bl-join-room', inputId: 'bl-room-code' },
+      'flip-and-match': { screen: 'fm-join-room', inputId: 'fm-room-code' },
+      'perfect-ten': { screen: 'pt-join-room', inputId: 'pt-room-code' },
+      'poker': { screen: 'pk-join-room', inputId: 'pk-room-code' }
     };
     
     const gameInfo = gameIdMapping[deepLinkData.gameId];
