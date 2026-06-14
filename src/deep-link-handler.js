@@ -50,10 +50,12 @@ export function initDeepLinkHandler({ roomInputId, joinScreenId, gameName, gameI
   // Clean URL after extracting parameters
   window.history.replaceState({}, '', window.location.pathname);
   
-  // Auto-fill room code
-  const roomInput = document.getElementById(roomInputId);
-  if (roomInput) {
-    roomInput.value = urlRoomCode.toUpperCase();
+  // Auto-fill room code (only if roomInputId is provided)
+  if (roomInputId) {
+    const roomInput = document.getElementById(roomInputId);
+    if (roomInput) {
+      roomInput.value = urlRoomCode.toUpperCase();
+    }
   }
   
   // Show join screen if provided
@@ -62,9 +64,12 @@ export function initDeepLinkHandler({ roomInputId, joinScreenId, gameName, gameI
     if (screen) {
       screen.removeAttribute('hidden');
     }
+    
+    // Only show toast if we're auto-filling
+    if (roomInputId) {
+      showToast('Room code filled from link!');
+    }
   }
-  
-  showToast('Room code filled from link!');
   
   // Check if opened in browser (not PWA) and show app banner
   const isPWA = window.matchMedia('(display-mode: standalone)').matches;

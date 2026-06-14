@@ -1036,9 +1036,10 @@ function showUpdateToast(registration) {
 
 async function init() {
   // Check for deep link with room code and optional game ID
+  // Don't auto-fill yet - we need to route to the correct game first
   const deepLinkData = initDeepLinkHandler({
-    roomInputId: 'room-code-input',
-    joinScreenId: 'ppp-join-room',
+    roomInputId: null,  // Don't auto-fill yet
+    joinScreenId: null, // Don't show screen yet
     gameName: 'Card Games'
   });
 
@@ -1076,12 +1077,18 @@ async function init() {
     
     const gameInfo = gameIdMapping[deepLinkData.gameId];
     if (gameInfo) {
-      // Auto-fill the correct game's join input
-      const input = document.getElementById(gameInfo.inputId);
-      if (input) input.value = deepLinkData.roomCode;
-      
-      // Show the correct game's join screen
-      showScreen(gameInfo.screen);
+      // Small delay to ensure sub-game elements are initialized
+      setTimeout(() => {
+        // Auto-fill the correct game's join input
+        const input = document.getElementById(gameInfo.inputId);
+        if (input) {
+          input.value = deepLinkData.roomCode;
+          showToast('Room code filled from link!');
+        }
+        
+        // Show the correct game's join screen
+        showScreen(gameInfo.screen);
+      }, 100);
       return; // Skip session check, user is joining via link
     }
   }
