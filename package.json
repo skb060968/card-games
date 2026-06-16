@@ -10,7 +10,8 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "firebase": "^12.9.0"
+    "firebase": "^12.9.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "fast-check": "latest",

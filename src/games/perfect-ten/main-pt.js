@@ -6,7 +6,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
-import { createShareHandler } from '../../deep-link-handler.js';
+import { createShareHandler, showQRCode } from '../../deep-link-handler.js';
 import {
   createGame,
   drawCard,
@@ -253,6 +253,12 @@ function wireLobby() {
   const shareBtn = document.getElementById('pt-btn-share-code');
   if (shareBtn) shareBtn.addEventListener('click', () => {
     if (roomCode) createShareHandler(roomCode, 'Perfect Ten', 'perfect-ten')();
+  });
+  
+  // QR code
+  const qrBtn = document.getElementById('pt-btn-qr-code');
+  if (qrBtn) qrBtn.addEventListener('click', () => {
+    if (roomCode) showQRCode(roomCode, 'Perfect Ten', 'perfect-ten');
   });
 
   // Start game (host)

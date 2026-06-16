@@ -7,7 +7,7 @@
  */
 
 import { showScreen, renderLandingPage, showToast } from './platform-ui.js';
-import { initDeepLinkHandler, createShareHandler } from './deep-link-handler.js';
+import { initDeepLinkHandler, createShareHandler, showQRCode } from './deep-link-handler.js';
 
 import {
   createGame,
@@ -379,6 +379,16 @@ function wireLobby() {
     btnShareCode.addEventListener('click', () => {
       if (roomCode) {
         createShareHandler(roomCode, 'Patte Par Patta', 'patte-par-patta')();
+      }
+    });
+  }
+  
+  // QR Code
+  const btnQRCode = document.getElementById('btn-qr-code');
+  if (btnQRCode) {
+    btnQRCode.addEventListener('click', () => {
+      if (roomCode) {
+        showQRCode(roomCode, 'Patte Par Patta', 'patte-par-patta');
       }
     });
   }

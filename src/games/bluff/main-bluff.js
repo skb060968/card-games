@@ -8,7 +8,7 @@
  */
 
 import { showScreen, showToast } from '../../platform-ui.js';
-import { createShareHandler } from '../../deep-link-handler.js';
+import { createShareHandler, showQRCode } from '../../deep-link-handler.js';
 import {
   createGame,
   placeCards,
@@ -379,6 +379,12 @@ function wireLobby() {
   const shareBtn = document.getElementById('bl-btn-share-code');
   if (shareBtn) shareBtn.addEventListener('click', () => {
     if (roomCode) createShareHandler(roomCode, 'Bluff', 'bluff')();
+  });
+  
+  // QR code
+  const qrBtn = document.getElementById('bl-btn-qr-code');
+  if (qrBtn) qrBtn.addEventListener('click', () => {
+    if (roomCode) showQRCode(roomCode, 'Bluff', 'bluff');
   });
 
   // Start game (host)
