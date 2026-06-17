@@ -343,6 +343,27 @@ function setupLobby() {
   const waiting = document.getElementById('bl-lobby-waiting');
   if (isHost) { if (btnStart) btnStart.hidden = false; if (waiting) waiting.hidden = true; }
   else { if (btnStart) btnStart.hidden = true; if (waiting) waiting.hidden = false; }
+  
+  const playerList = document.getElementById('bl-lobby-player-list');
+  if (playerList && !playerList.dataset.removeListenerAdded) {
+    playerList.dataset.removeListenerAdded = 'true';
+    playerList.addEventListener('click', async (e) => {
+      const removeBtn = e.target.closest('.remove-player-btn');
+      if (!removeBtn || removeBtn.disabled) return;
+      const targetIndex = parseInt(removeBtn.dataset.playerIndex, 10);
+      const playerName = removeBtn.dataset.playerName;
+      if (isNaN(targetIndex) || !roomCode || !GAME_ID) return;
+      removeBtn.disabled = true;
+      try {
+        await removePlayer(GAME_ID, roomCode, targetIndex);
+        showToast(`${playerName} removed from room`);
+      } catch (err) {
+        console.error('Failed to remove player:', err);
+        showToast('Failed to remove player');
+        removeBtn.disabled = false;
+      }
+    });
+  }
 
   setupDisconnectHandler(GAME_ID, roomCode, playerIndex);
   if (unsubscribeRoom) unsubscribeRoom();
@@ -352,7 +373,7 @@ function setupLobby() {
       const keys = Object.keys(players).sort();
       const arr = keys.map((k) => players[k]);
       playerNames = arr.map((p) => p.name || 'Unknown');
-      renderLobbyPlayers(arr);
+      renderLobbyPlayers(arr, isHost, keys);
     },
     onStatusChange: async (status) => {
       if (status === 'active' && !isHost && state == null) {

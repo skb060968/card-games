@@ -684,7 +684,7 @@ export function renderResults(state) {
  * Renders lobby player list.
  * @param {Array<{name, emoji}>} players
  */
-export function renderLobbyPlayers(players) {
+export function renderLobbyPlayers(players, isHost, playerKeys = []) {
   const list = document.getElementById('bl-lobby-player-list');
   if (!list) return;
   list.innerHTML = '';
@@ -703,6 +703,15 @@ export function renderLobbyPlayers(players) {
       badge.className = 'host-badge';
       badge.textContent = 'HOST';
       li.appendChild(badge);
+    } else if (isHost && playerKeys[index]) {
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-player-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove player';
+      const playerIndex = parseInt(playerKeys[index].replace('player_', ''), 10);
+      removeBtn.dataset.playerIndex = playerIndex;
+      removeBtn.dataset.playerName = player.name;
+      li.appendChild(removeBtn);
     }
     list.appendChild(li);
   });

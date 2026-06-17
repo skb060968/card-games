@@ -472,9 +472,12 @@ export function renderResults(state) {
 /* ======= LOBBY ======= */
 
 /**
- * Renders lobby player list.
+ * Renders lobby player list with optional remove buttons for host.
+ * @param {Array} players - player objects
+ * @param {boolean} isHost - whether the current user is the host
+ * @param {Array} playerKeys - Firebase player keys (e.g., ['player_0', 'player_1'])
  */
-export function renderLobbyPlayers(players) {
+export function renderLobbyPlayers(players, isHost = false, playerKeys = []) {
   const list = document.getElementById('pt-lobby-player-list');
   if (!list) return;
   list.innerHTML = '';
@@ -493,6 +496,24 @@ export function renderLobbyPlayers(players) {
       badge.className = 'host-badge';
       badge.textContent = 'HOST';
       li.appendChild(badge);
+    } else if (isHost) {
+      // Add remove button for non-host players
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-player-btn';
+      removeBtn.type = 'button';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove player';
+      removeBtn.setAttribute('aria-label', `Remove ${player.name}`);
+      
+      // Extract player index from key (e.g., 'player_1' -> 1)
+      const playerKey = playerKeys[index];
+      const playerIndexMatch = playerKey ? playerKey.match(/player_(\d+)/) : null;
+      const playerIndex = playerIndexMatch ? parseInt(playerIndexMatch[1], 10) : index;
+      
+      removeBtn.dataset.playerIndex = String(playerIndex);
+      removeBtn.dataset.playerName = player.name || `Player ${index + 1}`;
+      
+      li.appendChild(removeBtn);
     }
     list.appendChild(li);
   });
