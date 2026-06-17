@@ -520,7 +520,7 @@ export function renderResults(state) {
 /**
  * Renders lobby player list.
  */
-export function renderLobbyPlayers(players) {
+export function renderLobbyPlayers(players, isHost, playerKeys = []) {
   const list = document.getElementById('sr-lobby-player-list');
   if (!list) return;
   list.innerHTML = '';
@@ -539,6 +539,17 @@ export function renderLobbyPlayers(players) {
       badge.className = 'host-badge';
       badge.textContent = 'HOST';
       li.appendChild(badge);
+    } else if (isHost && playerKeys[index]) {
+      // Show remove button for non-host players when current user is host
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-player-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Remove player';
+      // Store player info in data attributes for event delegation
+      const playerIndex = parseInt(playerKeys[index].replace('player_', ''), 10);
+      removeBtn.dataset.playerIndex = playerIndex;
+      removeBtn.dataset.playerName = player.name;
+      li.appendChild(removeBtn);
     }
     list.appendChild(li);
   });
