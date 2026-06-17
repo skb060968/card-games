@@ -313,6 +313,31 @@ function setupLobby() {
     if (btnStartOnline) btnStartOnline.hidden = true;
     if (lobbyWaiting) lobbyWaiting.hidden = false;
   }
+  
+  // Set up delegated event listener for remove buttons (only once)
+  const playerList = document.getElementById('lobby-player-list');
+  if (playerList && !playerList.dataset.removeListenerAdded) {
+    playerList.dataset.removeListenerAdded = 'true';
+    playerList.addEventListener('click', async (e) => {
+      const removeBtn = e.target.closest('.remove-player-btn');
+      if (!removeBtn || removeBtn.disabled) return;
+      
+      const targetIndex = parseInt(removeBtn.dataset.playerIndex, 10);
+      const playerName = removeBtn.dataset.playerName;
+      
+      if (isNaN(targetIndex) || !roomCode || !GAME_ID) return;
+      
+      removeBtn.disabled = true;
+      try {
+        await removePlayer(GAME_ID, roomCode, targetIndex);
+        showToast(`${playerName} removed from room`);
+      } catch (err) {
+        console.error('Failed to remove player:', err);
+        showToast('Failed to remove player');
+        removeBtn.disabled = false;
+      }
+    });
+  }
 
   setupDisconnectHandler(GAME_ID, roomCode, playerIndex);
 
@@ -324,7 +349,7 @@ function setupLobby() {
       const keys = Object.keys(players).filter((k) => players[k] && players[k].name).sort();
       const playerArr = keys.map((k) => players[k]);
       playerNames = playerArr.map((p) => p.name || 'Unknown');
-      renderLobbyPlayers(playerArr, isHost);
+      renderLobbyPlayers(playerArr, isHost, keys);
     },
 
     onStatusChange: async (status) => {
