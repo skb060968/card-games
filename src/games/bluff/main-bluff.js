@@ -101,6 +101,71 @@ const SPOKEN_RANK = {
 };
 const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
 
+// Cache for best Hindi voice
+let _bestHindiVoice = null;
+let _voicesLoaded = false;
+
+/**
+ * Loads and caches the best available Hindi voice.
+ * Prioritizes: Google > Microsoft > Others
+ */
+function loadBestHindiVoice() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+  
+  const voices = speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+
+  // Filter Hindi voices (hi-IN or hi)
+  const hindiVoices = voices.filter(v => 
+    v.lang === 'hi-IN' || v.lang === 'hi' || v.lang.startsWith('hi-')
+  );
+
+  if (hindiVoices.length === 0) {
+    console.log('No Hindi voices available. Available languages:', 
+      [...new Set(voices.map(v => v.lang))].slice(0, 10).join(', '));
+    return null;
+  }
+
+  // Prioritize Google voices (usually best quality)
+  let bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('google'));
+  
+  // Fallback to Microsoft voices
+  if (!bestVoice) {
+    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('microsoft'));
+  }
+  
+  // Fallback to any Hindi voice
+  if (!bestVoice) {
+    bestVoice = hindiVoices[0];
+  }
+
+  console.log(`Selected Hindi voice: ${bestVoice.name} (${bestVoice.lang})`);
+  console.log(`Available Hindi voices: ${hindiVoices.map(v => v.name).join(', ')}`);
+  
+  return bestVoice;
+}
+
+/**
+ * Ensures voices are loaded (some browsers load them asynchronously).
+ */
+function ensureVoicesLoaded() {
+  if (_voicesLoaded || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  
+  const voices = speechSynthesis.getVoices();
+  if (voices && voices.length > 0) {
+    _voicesLoaded = true;
+    _bestHindiVoice = loadBestHindiVoice();
+  } else {
+    // Some browsers fire voiceschanged event when voices are loaded
+    speechSynthesis.addEventListener('voiceschanged', () => {
+      if (!_voicesLoaded) {
+        _voicesLoaded = true;
+        _bestHindiVoice = loadBestHindiVoice();
+      }
+    }, { once: true });
+  }
+}
+
 /**
  * Returns a speech-friendly phrase for a count of a rank.
  * e.g. (3, '5') → "teen panji"; (1, 'K') → "ek badshah".
@@ -111,26 +176,62 @@ function spokenRankPhrase(count, rank) {
   return `${num} ${word}`;
 }
 
-function speak(text, lang) {
+/**
+ * Enhanced speak function with best voice selection.
+ * @param {string} text - Text to speak
+ * @param {boolean} useHindi - Whether to use Hindi voice (default: false)
+ */
+function speak(text, useHindi = false) {
   if (isMuted()) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  
   try {
     if (speechSynthesis.paused) speechSynthesis.resume();
     speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
+    utterance.rate = 0.90;  // Slightly slower for clarity
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
-    if (lang) utterance.lang = lang;
+    
+    // Use best Hindi voice if requested and available
+    if (useHindi) {
+      if (!_bestHindiVoice) {
+        ensureVoicesLoaded();
+        _bestHindiVoice = loadBestHindiVoice();
+      }
+      
+      if (_bestHindiVoice) {
+        utterance.voice = _bestHindiVoice;
+        utterance.lang = _bestHindiVoice.lang;
+      } else {
+        // Fallback: set language and let browser choose
+        utterance.lang = 'hi-IN';
+      }
+    }
+    
     speechSynthesis.speak(utterance);
-  } catch (_) {}
+  } catch (err) {
+    console.warn('Speech synthesis error:', err);
+  }
 }
 
 /**
- * Speaks a card placement phrase using hi-IN for Hindi voices where available.
+ * Speaks a card placement phrase using the best available Hindi voice.
  */
 function speakPlacement(count, rank) {
-  speak(spokenRankPhrase(count, rank), 'hi-IN');
+  speak(spokenRankPhrase(count, rank), true);
+}
+
+// Initialize voices when script loads
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  ensureVoicesLoaded();
+  // Also try to load voices when page becomes visible (helps with Chrome)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !_voicesLoaded) {
+      ensureVoicesLoaded();
+    }
+  }, { once: true });
 }
 
 /* ======= CARD ANIMATIONS ======= */
