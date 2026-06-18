@@ -87,6 +87,7 @@ function loadSession() {
 
 function cleanupAndGoHome() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+  disableSpeech(); // Disable speech before cleanup
   cancelAllSpeech(); // Cancel any ongoing speech
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
@@ -103,6 +104,28 @@ const SPOKEN_RANK = {
 };
 const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
 
+// Flag to disable speech (set when transitioning screens)
+let _speechDisabled = false;
+
+/**
+ * Disables all speech output. Call before screen transitions.
+ */
+function disableSpeech() {
+  _speechDisabled = true;
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      speechSynthesis.cancel();
+    } catch (_) {}
+  }
+}
+
+/**
+ * Re-enables speech output. Call after screen is ready.
+ */
+function enableSpeech() {
+  _speechDisabled = false;
+}
+
 /**
  * Returns a speech-friendly phrase for a count of a rank.
  * e.g. (3, '5') → "teen panji"; (1, 'K') → "ek badshah".
@@ -114,6 +137,7 @@ function spokenRankPhrase(count, rank) {
 }
 
 function speak(text, lang) {
+  if (_speechDisabled) return; // Don't speak if disabled
   if (isMuted()) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
@@ -455,6 +479,7 @@ function startGame() {
   hideRankSelector();
   clearSelection();
   setEventMessage('');
+  enableSpeech(); // Re-enable speech for gameplay
   renderUI();
 }
 
@@ -723,6 +748,8 @@ async function handleWin() {
   if (_resultsShown) { renderResults(state); showScreen('bl-results'); return; }
   _resultsShown = true;
 
+  disableSpeech(); // Disable speech before showing results
+
   if (state.winnerIndex != null) {
     const winner = state.players[state.winnerIndex];
     await announceWin(winner.name);
@@ -856,6 +883,7 @@ function wireEndGame() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     if (!state) return;
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     state.status = 'finished'; state.winnerIndex = null;
     if (roomCode) { try { await endRoom(GAME_ID, roomCode); } catch (_) {} }
@@ -872,6 +900,7 @@ function wireResults() {
   const btnHome = document.getElementById('bl-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (isHost) {
@@ -898,6 +927,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (window._blReadyCleanup) window._blReadyCleanup();
