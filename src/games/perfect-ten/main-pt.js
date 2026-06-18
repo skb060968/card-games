@@ -32,6 +32,8 @@ import {
   warmSpeech,
   playSound,
   cancelAllSpeech,
+  disableSpeech,
+  enableSpeech,
 } from '../../shared/voice-announcer.js';
 import { coinRain, clearConfetti } from '../../shared/win-pot-calculator.js';
 import {
@@ -81,6 +83,7 @@ function loadSession() {
 
 function cleanupAndGoHome() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+  disableSpeech(); // Disable speech before cleanup
   cancelAllSpeech(); // Cancel any ongoing speech
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
@@ -329,6 +332,7 @@ function startGame() {
     btnAgain.disabled = false;
     btnAgain.textContent = 'Play Again';
   }
+  enableSpeech(); // Re-enable speech for gameplay
   renderUI();
 }
 
@@ -769,6 +773,7 @@ function wireEndGame() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     if (!state) return;
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     state.status = 'finished'; state.winnerIndex = null;
     if (roomCode) { try { await endRoom(GAME_ID, roomCode); } catch (_) {} }
@@ -785,6 +790,7 @@ function wireResults() {
   const btnHome = document.getElementById('pt-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (isHost) {
@@ -811,6 +817,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    disableSpeech(); // Disable speech during transition
     cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (window._ptReadyCleanup) window._ptReadyCleanup();

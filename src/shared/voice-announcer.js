@@ -8,6 +8,9 @@
 
 const MUTE_KEY = 'card_games_muted';
 
+// Global flag to disable all speech (used during screen transitions)
+let _speechDisabled = false;
+
 const SOUND_FILES = {
   throw: '/sounds/throw.mp3',
   capture: '/sounds/capture.mp3',
@@ -54,6 +57,7 @@ export function playSound(name) {
  * @returns {Promise<void>}
  */
 function speak(text) {
+  if (_speechDisabled) return Promise.resolve(); // Don't speak if disabled
   if (isMuted()) return Promise.resolve();
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return Promise.resolve();
@@ -91,6 +95,21 @@ export function cancelAllSpeech() {
   } catch (_) {
     // Ignore errors
   }
+}
+
+/**
+ * Disables all speech output globally. Call before screen transitions.
+ */
+export function disableSpeech() {
+  _speechDisabled = true;
+  cancelAllSpeech();
+}
+
+/**
+ * Re-enables speech output globally. Call when gameplay resumes.
+ */
+export function enableSpeech() {
+  _speechDisabled = false;
 }
 
 /**
