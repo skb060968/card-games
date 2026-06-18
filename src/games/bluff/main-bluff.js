@@ -101,84 +101,6 @@ const SPOKEN_RANK = {
 };
 const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
 
-// Cache for best Hindi voice
-let _bestHindiVoice = null;
-let _voicesLoaded = false;
-
-/**
- * Loads and caches the best available Hindi voice.
- * Prioritizes: Online Natural voices > Google > Microsoft > Others
- */
-function loadBestHindiVoice() {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
-  
-  const voices = speechSynthesis.getVoices();
-  if (!voices || voices.length === 0) return null;
-
-  // Filter Hindi voices (hi-IN or hi)
-  const hindiVoices = voices.filter(v => 
-    v.lang === 'hi-IN' || v.lang === 'hi' || v.lang.startsWith('hi-')
-  );
-
-  if (hindiVoices.length === 0) {
-    console.log('No Hindi voices available. Available languages:', 
-      [...new Set(voices.map(v => v.lang))].slice(0, 10).join(', '));
-    return null;
-  }
-
-  // Priority 1: Microsoft Online Natural voices (best neural quality)
-  let bestVoice = hindiVoices.find(v => 
-    v.name.toLowerCase().includes('online') && 
-    v.name.toLowerCase().includes('natural')
-  );
-  
-  // Priority 2: Google voices (high quality)
-  if (!bestVoice) {
-    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('google'));
-  }
-  
-  // Priority 3: Any Microsoft voice with "online" (decent quality)
-  if (!bestVoice) {
-    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('online'));
-  }
-  
-  // Priority 4: Other Microsoft voices
-  if (!bestVoice) {
-    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('microsoft'));
-  }
-  
-  // Priority 5: Any Hindi voice (last resort)
-  if (!bestVoice) {
-    bestVoice = hindiVoices[0];
-  }
-
-  console.log(`Selected Hindi voice: ${bestVoice.name} (${bestVoice.lang})`);
-  console.log(`Available Hindi voices: ${hindiVoices.map(v => v.name).join(', ')}`);
-  
-  return bestVoice;
-}
-
-/**
- * Ensures voices are loaded (some browsers load them asynchronously).
- */
-function ensureVoicesLoaded() {
-  if (_voicesLoaded || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  
-  const voices = speechSynthesis.getVoices();
-  if (voices && voices.length > 0) {
-    _voicesLoaded = true;
-    _bestHindiVoice = loadBestHindiVoice();
-  } else {
-    // Some browsers fire voiceschanged event when voices are loaded
-    speechSynthesis.addEventListener('voiceschanged', () => {
-      if (!_voicesLoaded) {
-        _voicesLoaded = true;
-        _bestHindiVoice = loadBestHindiVoice();
-      }
-    }, { once: true });
-  }
-}
-
 /**
  * Returns a speech-friendly phrase for a count of a rank.
  * e.g. (3, '5') → "teen panji"; (1, 'K') → "ek badshah".
@@ -189,127 +111,26 @@ function spokenRankPhrase(count, rank) {
   return `${num} ${word}`;
 }
 
-/**
- * Enhanced speak function with best voice selection.
- * @param {string} text - Text to speak
- * @param {boolean} useHindi - Whether to use Hindi voice (default: false)
- */
-function speak(text, useHindi = false) {
+function speak(text, lang) {
   if (isMuted()) return;
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  
   try {
-    // Cancel any ongoing speech
-    if (speechSynthesis.speaking || speechSynthesis.pending) {
-      speechSynthesis.cancel();
-    }
-    
-    if (speechSynthesis.paused) {
-      speechSynthesis.resume();
-    }
-    
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.90;  // Slightly slower for clarity
+    utterance.rate = 0.95;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
-    
-    // Use best Hindi voice if requested and available
-    if (useHindi) {
-      if (!_bestHindiVoice) {
-        ensureVoicesLoaded();
-        _bestHindiVoice = loadBestHindiVoice();
-      }
-      
-      if (_bestHindiVoice) {
-        utterance.voice = _bestHindiVoice;
-        utterance.lang = _bestHindiVoice.lang;
-      } else {
-        // Fallback: set language and let browser choose
-        utterance.lang = 'hi-IN';
-      }
-    }
-    
-    // Error handlers for debugging
-    utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event.error, event);
-      // If online voice fails, try to reload voices and retry with basic voice
-      if (event.error === 'network' || event.error === 'synthesis-failed') {
-        console.warn('Online voice failed, will retry with basic voice on next attempt');
-        _bestHindiVoice = null; // Reset to force reload
-      }
-    };
-    
-    utterance.onend = () => {
-      // Clean up after speech completes
-      if (speechSynthesis.speaking === false && speechSynthesis.pending === false) {
-        speechSynthesis.cancel(); // Final cleanup
-      }
-    };
-    
-    // Small delay helps with voice initialization on some browsers
-    setTimeout(() => {
-      speechSynthesis.speak(utterance);
-    }, 10);
-    
-  } catch (err) {
-    console.error('Speech synthesis error:', err);
-  }
+    if (lang) utterance.lang = lang;
+    speechSynthesis.speak(utterance);
+  } catch (_) {}
 }
 
 /**
- * Speaks a card placement phrase using the best available Hindi voice.
+ * Speaks a card placement phrase using hi-IN for Hindi voices where available.
  */
 function speakPlacement(count, rank) {
-  speak(spokenRankPhrase(count, rank), true);
-}
-
-/**
- * Test speech function - useful for debugging voice issues.
- * Call this on user interaction (e.g., button click) to initialize speech.
- */
-function testSpeech() {
-  console.log('Testing speech...');
-  ensureVoicesLoaded();
-  const voice = loadBestHindiVoice();
-  if (voice) {
-    console.log('Testing with voice:', voice.name);
-    speak('teen dooki', true);
-  } else {
-    console.error('No Hindi voice available for testing');
-  }
-}
-
-// Expose test function globally for debugging
-if (typeof window !== 'undefined') {
-  window.testBluffSpeech = testSpeech;
-}
-
-// Initialize voices when script loads
-if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  ensureVoicesLoaded();
-  // Also try to load voices when page becomes visible (helps with Chrome)
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !_voicesLoaded) {
-      ensureVoicesLoaded();
-    }
-  }, { once: true });
-  
-  // Initialize speech synthesis on first user interaction
-  const initSpeech = () => {
-    ensureVoicesLoaded();
-    loadBestHindiVoice();
-    // Speak empty string to initialize (browser requirement)
-    if (speechSynthesis && !isMuted()) {
-      const utterance = new SpeechSynthesisUtterance('');
-      utterance.volume = 0;
-      speechSynthesis.speak(utterance);
-    }
-  };
-  
-  // Initialize on various user interactions
-  ['click', 'touchstart', 'keydown'].forEach(event => {
-    document.addEventListener(event, initSpeech, { once: true, passive: true });
-  });
+  speak(spokenRankPhrase(count, rank), 'hi-IN');
 }
 
 /* ======= CARD ANIMATIONS ======= */
