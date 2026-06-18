@@ -107,7 +107,7 @@ let _voicesLoaded = false;
 
 /**
  * Loads and caches the best available Hindi voice.
- * Prioritizes: Google > Microsoft > Others
+ * Prioritizes: Online Natural voices > Google > Microsoft > Others
  */
 function loadBestHindiVoice() {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
@@ -126,15 +126,28 @@ function loadBestHindiVoice() {
     return null;
   }
 
-  // Prioritize Google voices (usually best quality)
-  let bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('google'));
+  // Priority 1: Microsoft Online Natural voices (best neural quality)
+  let bestVoice = hindiVoices.find(v => 
+    v.name.toLowerCase().includes('online') && 
+    v.name.toLowerCase().includes('natural')
+  );
   
-  // Fallback to Microsoft voices
+  // Priority 2: Google voices (high quality)
+  if (!bestVoice) {
+    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('google'));
+  }
+  
+  // Priority 3: Any Microsoft voice with "online" (decent quality)
+  if (!bestVoice) {
+    bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('online'));
+  }
+  
+  // Priority 4: Other Microsoft voices
   if (!bestVoice) {
     bestVoice = hindiVoices.find(v => v.name.toLowerCase().includes('microsoft'));
   }
   
-  // Fallback to any Hindi voice
+  // Priority 5: Any Hindi voice (last resort)
   if (!bestVoice) {
     bestVoice = hindiVoices[0];
   }
