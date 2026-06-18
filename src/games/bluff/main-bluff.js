@@ -199,8 +199,14 @@ function speak(text, useHindi = false) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
   try {
-    if (speechSynthesis.paused) speechSynthesis.resume();
-    speechSynthesis.cancel();
+    // Cancel any ongoing speech
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.cancel();
+    }
+    
+    if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+    }
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.90;  // Slightly slower for clarity
@@ -223,9 +229,30 @@ function speak(text, useHindi = false) {
       }
     }
     
-    speechSynthesis.speak(utterance);
+    // Error handlers for debugging
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event.error, event);
+      // If online voice fails, try to reload voices and retry with basic voice
+      if (event.error === 'network' || event.error === 'synthesis-failed') {
+        console.warn('Online voice failed, will retry with basic voice on next attempt');
+        _bestHindiVoice = null; // Reset to force reload
+      }
+    };
+    
+    utterance.onend = () => {
+      // Clean up after speech completes
+      if (speechSynthesis.speaking === false && speechSynthesis.pending === false) {
+        speechSynthesis.cancel(); // Final cleanup
+      }
+    };
+    
+    // Small delay helps with voice initialization on some browsers
+    setTimeout(() => {
+      speechSynthesis.speak(utterance);
+    }, 10);
+    
   } catch (err) {
-    console.warn('Speech synthesis error:', err);
+    console.error('Speech synthesis error:', err);
   }
 }
 
@@ -234,6 +261,27 @@ function speak(text, useHindi = false) {
  */
 function speakPlacement(count, rank) {
   speak(spokenRankPhrase(count, rank), true);
+}
+
+/**
+ * Test speech function - useful for debugging voice issues.
+ * Call this on user interaction (e.g., button click) to initialize speech.
+ */
+function testSpeech() {
+  console.log('Testing speech...');
+  ensureVoicesLoaded();
+  const voice = loadBestHindiVoice();
+  if (voice) {
+    console.log('Testing with voice:', voice.name);
+    speak('teen dooki', true);
+  } else {
+    console.error('No Hindi voice available for testing');
+  }
+}
+
+// Expose test function globally for debugging
+if (typeof window !== 'undefined') {
+  window.testBluffSpeech = testSpeech;
 }
 
 // Initialize voices when script loads
@@ -245,6 +293,23 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       ensureVoicesLoaded();
     }
   }, { once: true });
+  
+  // Initialize speech synthesis on first user interaction
+  const initSpeech = () => {
+    ensureVoicesLoaded();
+    loadBestHindiVoice();
+    // Speak empty string to initialize (browser requirement)
+    if (speechSynthesis && !isMuted()) {
+      const utterance = new SpeechSynthesisUtterance('');
+      utterance.volume = 0;
+      speechSynthesis.speak(utterance);
+    }
+  };
+  
+  // Initialize on various user interactions
+  ['click', 'touchstart', 'keydown'].forEach(event => {
+    document.addEventListener(event, initSpeech, { once: true, passive: true });
+  });
 }
 
 /* ======= CARD ANIMATIONS ======= */
