@@ -32,6 +32,7 @@ import {
   isMuted,
   warmSpeech,
   playSound,
+  cancelAllSpeech,
 } from '../../shared/voice-announcer.js';
 import { coinRain, clearConfetti } from '../../shared/win-pot-calculator.js';
 import {
@@ -80,6 +81,7 @@ function loadSession() {
 
 function cleanupAndGoHome() {
   if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+  cancelAllSpeech(); // Cancel any ongoing speech
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
   if (goHome) goHome();
@@ -836,6 +838,7 @@ function wireEndGame() {
   if (!btn) return;
   btn.addEventListener('click', async () => {
     if (!state) return;
+    cancelAllSpeech(); // Cancel any ongoing speech
     state.status = 'finished'; state.winnerIndex = null;
     if (roomCode) { try { await endRoom(GAME_ID, roomCode); } catch (_) {} }
     renderResults(state);
@@ -851,6 +854,7 @@ function wireResults() {
   const btnHome = document.getElementById('sr-btn-home');
 
   if (btnAgain) btnAgain.addEventListener('click', async () => {
+    cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (isHost) {
       if (!btnAgain.dataset.hostReady) {
@@ -876,6 +880,7 @@ function wireResults() {
   });
 
   if (btnHome) btnHome.addEventListener('click', async () => {
+    cancelAllSpeech(); // Cancel any ongoing speech
     clearConfetti();
     if (window._srReadyCleanup) window._srReadyCleanup();
     if (roomCode) {

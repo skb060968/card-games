@@ -81,6 +81,19 @@ function speak(text) {
 }
 
 /**
+ * Cancels all ongoing and queued speech synthesis.
+ * Call this when changing screens or cleaning up game state.
+ */
+export function cancelAllSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+  } catch (_) {
+    // Ignore errors
+  }
+}
+
+/**
  * Pre-warms speech synthesis on user gesture.
  * Call this on every user tap to keep Safari happy.
  */
