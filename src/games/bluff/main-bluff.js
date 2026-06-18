@@ -748,8 +748,6 @@ async function handleWin() {
   if (_resultsShown) { renderResults(state); showScreen('bl-results'); return; }
   _resultsShown = true;
 
-  disableSpeech(); // Disable speech before showing results
-
   if (state.winnerIndex != null) {
     const winner = state.players[state.winnerIndex];
     await announceWin(winner.name);
@@ -758,6 +756,8 @@ async function handleWin() {
     }
     coinRain();
   }
+
+  disableSpeech(); // Disable speech AFTER win announcement, before showing results
 
   renderResults(state);
   showScreen('bl-results');
