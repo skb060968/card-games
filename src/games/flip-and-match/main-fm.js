@@ -64,6 +64,7 @@ let unsubscribeRoom = null;
 let goHome = null;
 let isProcessingFlip = false;
 let _resultsShown = false;
+let _hasInitializedGame = false; // Track if we've loaded game from status change
 
 /* ======= SESSION ======= */
 
@@ -93,6 +94,7 @@ function cleanupAndGoHome() {
   clearSession();
   roomCode = null; playerIndex = null; isHost = false;
   playerNames = []; state = null; isProcessingFlip = false;
+  _hasInitializedGame = false; // Reset initialization flag
   if (goHome) goHome();
 }
 
@@ -215,7 +217,8 @@ function setupLobby() {
       renderLobbyPlayers(arr, isHost, keys);
     },
     onStatusChange: async (status) => {
-      if (status === 'active' && !isHost) {
+      if (status === 'active' && !isHost && !_hasInitializedGame) {
+        _hasInitializedGame = true;
         try {
           const snap = await firebaseRetry(() =>
             get(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`))
@@ -229,7 +232,7 @@ function setupLobby() {
           }
         } catch (err) { console.error(err); showToast('Failed to load game.'); }
       }
-      if (status === 'lobby') { state = null; setupLobby(); }
+      if (status === 'lobby') { state = null; _hasInitializedGame = false; setupLobby(); }
       if (status === 'ended') {
         if (state) {
           state.status = 'finished'; state.winnerIndex = null;

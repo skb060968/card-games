@@ -66,6 +66,7 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let goHome = null;
+let _hasInitializedGame = false; // Track if we've loaded game from status change
 // _lastDrawSource and _lastDrawnCard removed — each Firebase write now carries its own lastMove
 
 /* ======= SESSION ======= */
@@ -87,6 +88,7 @@ function cleanupAndGoHome() {
   cancelAllSpeech(); // Cancel any ongoing speech
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
+  _hasInitializedGame = false; // Reset initialization flag
   if (goHome) goHome();
 }
 
@@ -285,7 +287,8 @@ function setupLobby() {
       renderLobbyPlayers(arr, isHost, keys);
     },
     onStatusChange: async (status) => {
-      if (status === 'active' && !isHost) {
+      if (status === 'active' && !isHost && !_hasInitializedGame) {
+        _hasInitializedGame = true;
         try {
           const snap = await firebaseRetry(() => get(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`)));
           if (snap.exists()) {
@@ -294,7 +297,7 @@ function setupLobby() {
           }
         } catch (err) { console.error(err); showToast('Failed to load game.'); }
       }
-      if (status === 'lobby') { state = null; setupLobby(); }
+      if (status === 'lobby') { state = null; _hasInitializedGame = false; setupLobby(); }
       if (status === 'ended') {
         if (state) { state.status = 'finished'; state.winnerIndex = null; renderResults(state); showScreen('sr-results'); startReadyListener(); }
       }
