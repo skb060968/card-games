@@ -85,6 +85,7 @@ let isHost = false;
 let playerNames = [];
 let unsubscribeRoom = null;
 let _resultsShown = false;
+let _hasInitializedGame = false; // Track if we've loaded game from status change
 
 /* ======= DOM REFERENCES ======= */
 
@@ -132,6 +133,7 @@ function cleanupAndGoHome() {
   isHost = false;
   playerNames = [];
   state = null;
+  _hasInitializedGame = false; // Reset initialization flag
   showLandingPage();
 }
 
@@ -353,7 +355,8 @@ function setupLobby() {
     },
 
     onStatusChange: async (status) => {
-      if (status === 'active' && !isHost) {
+      if (status === 'active' && !isHost && !_hasInitializedGame) {
+        _hasInitializedGame = true;
         try {
           const roomRef = ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`);
           const snapshot = await firebaseRetry(() => get(roomRef));
@@ -372,6 +375,7 @@ function setupLobby() {
 
       if (status === 'lobby') {
         state = null;
+        _hasInitializedGame = false; // Reset flag when back in lobby
         setupLobby();
       }
 
