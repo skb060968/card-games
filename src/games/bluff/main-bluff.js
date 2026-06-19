@@ -402,7 +402,7 @@ function setupLobby() {
       renderLobbyPlayers(arr, isHost, keys);
     },
     onStatusChange: async (status) => {
-      if (status === 'active' && !isHost && state == null) {
+      if (status === 'active' && !isHost) {
         try {
           const snap = await firebaseRetry(() => get(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`)));
           if (snap.exists()) {

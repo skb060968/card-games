@@ -195,7 +195,7 @@ function setupLobby() {
       // first time (e.g. game just started). Subsequent listener ticks while
       // status remains 'active' must NOT restart startGame, otherwise they
       // would swap players back to the gameplay screen mid-results.
-      if (status === 'active' && !isHost && state == null) {
+      if (status === 'active' && !isHost) {
         try {
           const snap = await firebaseRetry(() => get(ref(db, `card-games/${GAME_ID}-rooms/${roomCode}`)));
           if (snap.exists()) {

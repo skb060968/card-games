@@ -10,6 +10,8 @@ const MUTE_KEY = 'card_games_muted';
 
 // Global flag to disable all speech (used during screen transitions)
 let _speechDisabled = false;
+// Global flag to disable all sound effects (used during screen transitions)
+let _soundsDisabled = false;
 
 const SOUND_FILES = {
   throw: '/sounds/throw.mp3',
@@ -25,6 +27,7 @@ const soundBuffers = {};
  * @param {string} name - 'throw' or 'capture'
  */
 export function playSound(name) {
+  if (_soundsDisabled) return; // Don't play if sounds disabled
   if (isMuted()) return;
   const url = SOUND_FILES[name];
   if (!url) return;
@@ -102,6 +105,7 @@ export function cancelAllSpeech() {
  */
 export function disableSpeech() {
   _speechDisabled = true;
+  _soundsDisabled = true; // Also disable sound effects
   cancelAllSpeech();
 }
 
@@ -110,6 +114,7 @@ export function disableSpeech() {
  */
 export function enableSpeech() {
   _speechDisabled = false;
+  _soundsDisabled = false; // Also re-enable sound effects
 }
 
 /**
