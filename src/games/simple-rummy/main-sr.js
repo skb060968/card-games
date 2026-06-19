@@ -608,6 +608,7 @@ async function handleDiscard(handIndex) {
 
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (!state) return; // Don't process updates if we haven't started the game yet
   if (_isAnimating) return;
   if (_resultsShown) return;
 

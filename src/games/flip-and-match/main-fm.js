@@ -446,6 +446,7 @@ async function handleWin() {
 
 async function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (!state) return; // Don't process updates if we haven't started the game yet
   if (isProcessingFlip) return;
   if (_resultsShown) return;
 

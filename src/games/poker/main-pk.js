@@ -460,6 +460,7 @@ function handleWin(isFoldWin = false) {
 
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (!state) return; // Don't process updates if we haven't started the game yet
   if (_resultsShown) return;
 
   const playersData = {};

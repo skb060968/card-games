@@ -768,6 +768,7 @@ async function handleWin() {
 
 function handleRemoteUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (!state) return; // Don't process updates if we haven't started the game yet
   // If results screen is already shown, ignore further game-action replays
   // (e.g. speech/sounds from late listener ticks after Play Again is pressed).
   if (_resultsShown) return;
