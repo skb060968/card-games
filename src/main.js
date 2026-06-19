@@ -606,6 +606,7 @@ async function handleCardTap(handIndex) {
 /** Handles remote game updates from Firebase. */
 function handleRemoteGameUpdate(gameData, lastMove) {
   if (!gameData || !roomCode) return;
+  if (!state) return; // Don't process updates if we haven't started the game yet
   if (isProcessingTurn) return;
   if (_resultsShown) return;
 
