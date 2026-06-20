@@ -245,7 +245,9 @@ export function resolveChallenge(state, challengerIndex) {
     return { ...p };
   });
 
-  const nextPlayer = (placerIndex + 1) % state.players.length;
+  // If bluff was caught, challenger gets bonus turn
+  // Otherwise, turn advances to next player after placer
+  const nextPlayer = bluffCaught ? challengerIndex : (placerIndex + 1) % state.players.length;
 
   // If the placer was truthful AND had emptied their hand with the placement,
   // they have won — nothing remaining and no way to penalize them further.
