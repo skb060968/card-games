@@ -367,10 +367,17 @@ export function performAction(state, playerIndex, action) {
     }
 
     case 'fold': {
-      // Fold is only valid after all active players have acted once (round 1 complete)
-      if (!allActivePlayersHaveActed(state)) {
-        throw new Error('Cannot fold in the first round');
+      // Fold is valid after all active players have acted once (round 1 complete)
+      // OR if the player can't afford to call (insufficient chips)
+      const activePlayers = getActivePlayers(state);
+      const maxBet = Math.max(...activePlayers.map((i) => state.players[i].currentBet));
+      const needToCall = maxBet - player.currentBet;
+      const canAffordCall = player.chips >= needToCall;
+      
+      if (!allActivePlayersHaveActed(state) && canAffordCall) {
+        throw new Error('Cannot fold in the first round if you have chips to call');
       }
+      
       newPlayers[playerIndex].folded = true;
       newPlayers[playerIndex].hasActed = true;
 

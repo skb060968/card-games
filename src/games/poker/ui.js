@@ -280,7 +280,12 @@ function renderActions(container, state, localPlayerIndex, callbacks) {
   } else if (needToCall > 0) {
     // Someone has bet and my bet is less than max
     // Show: Call + Raise, and Fold only if allActed (round 2+)
-    if (player.chips >= needToCall) {
+    // EXCEPTION: If player can't afford to call, always show Fold
+    const canAffordCall = player.chips >= needToCall;
+    const raiseTotalCost = needToCall + 10;
+    const canAffordRaise = player.chips >= raiseTotalCost;
+    
+    if (canAffordCall) {
       const callBtn = document.createElement('button');
       callBtn.className = 'btn secondary pk-action-btn';
       callBtn.type = 'button';
@@ -291,8 +296,7 @@ function renderActions(container, state, localPlayerIndex, callbacks) {
       btnRow.appendChild(callBtn);
     }
 
-    const raiseTotalCost = needToCall + 10;
-    if (player.chips >= raiseTotalCost) {
+    if (canAffordRaise) {
       const raiseBtn = document.createElement('button');
       raiseBtn.className = 'btn primary pk-action-btn pk-raise-btn';
       raiseBtn.type = 'button';
@@ -303,8 +307,8 @@ function renderActions(container, state, localPlayerIndex, callbacks) {
       btnRow.appendChild(raiseBtn);
     }
 
-    // Fold only after round 1 (all players have acted once)
-    if (allActed) {
+    // Fold: available after round 1 OR if player can't afford any other action
+    if (allActed || (!canAffordCall && !canAffordRaise)) {
       const foldBtn = document.createElement('button');
       foldBtn.className = 'btn secondary pk-action-btn pk-fold-btn';
       foldBtn.type = 'button';
