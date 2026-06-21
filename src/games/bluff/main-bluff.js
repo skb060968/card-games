@@ -100,7 +100,7 @@ function cleanupAndGoHome() {
 
 // Indian-style rank names in Devanagari script for natural Hindi TTS pronunciation.
 const SPOKEN_RANK = {
-  'A': 'इक्का',      // ikka
+  'A': 'इक्के',      // ikke
   '2': 'दुक्की',     // dukki
   '3': 'तिक्की',     // tikki
   '4': 'चौकी',       // chowki
@@ -108,11 +108,11 @@ const SPOKEN_RANK = {
   '6': 'छक्की',      // chhakki
   '7': 'सत्ती',      // satti
   '8': 'अट्ठी',      // atthi
-  '9': 'नौली',       // nauli
-  '10': 'दहली',      // dehli
+  '9': 'नहले',       // nahale
+  '10': 'दहले',      // dahale
   'J': 'गुलाम',      // gulaam
   'Q': 'रानी',       // rani
-  'K': 'बादशाह',     // baadshah
+  'K': 'राजा',       // raja
 };
 const SPOKEN_COUNT = { 
   1: 'एक',    // ek
