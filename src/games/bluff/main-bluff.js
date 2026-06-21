@@ -98,13 +98,28 @@ function cleanupAndGoHome() {
 
 /* ======= SPEECH HELPER ======= */
 
-// Indian-style rank names (singular form used for any count).
+// Indian-style rank names in Devanagari script for natural Hindi TTS pronunciation.
 const SPOKEN_RANK = {
-  'A': 'ekke', '2': 'dooki', '3': 'tikki', '4': 'chowki', '5': 'panji',
-  '6': 'chhakki', '7': 'satti', '8': 'atthi', '9': 'nehli', '10': 'dehli',
-  'J': 'gulaam', 'Q': 'rani', 'K': 'baadshah',
+  'A': 'इक्का',      // ikka
+  '2': 'दुक्की',     // dukki
+  '3': 'तिक्की',     // tikki
+  '4': 'चौकी',       // chowki
+  '5': 'पंजी',       // panji
+  '6': 'छक्की',      // chhakki
+  '7': 'सत्ती',      // satti
+  '8': 'अट्ठी',      // atthi
+  '9': 'नौली',       // nauli
+  '10': 'दहली',      // dehli
+  'J': 'गुलाम',      // gulaam
+  'Q': 'रानी',       // rani
+  'K': 'बादशाह',     // baadshah
 };
-const SPOKEN_COUNT = { 1: 'ek', 2: 'do', 3: 'teen', 4: 'chaar' };
+const SPOKEN_COUNT = { 
+  1: 'एक',    // ek
+  2: 'दो',    // do
+  3: 'तीन',   // teen
+  4: 'चार'    // chaar
+};
 
 // Flag to disable speech (set when transitioning screens)
 let _speechDisabled = false;
