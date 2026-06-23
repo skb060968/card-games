@@ -738,13 +738,13 @@ async function handleChallenge() {
     playSound('capture');
     await animatePileSweep(loserIndex);
 
-    // Announce outcome with challenger name
+    // Announce outcome with challenger name in Devanagari
     if (bluffCaught) {
-      speak(`${placerName} caught bluffing!`);
-      setEventMessage(`🚨 ${challengerName} challenged! ${placerName} was bluffing! ${placerName} takes the pile.`);
+      speak(`${placerName} ने झूठ बोला!`);
+      setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहे थे! ${placerName} पत्ते उठाएंगे।`);
     } else {
-      speak(`${placerName} was truthful!`);
-      setEventMessage(`✅ ${challengerName} challenged! ${placerName} was truthful! ${loserName} takes the pile.`);
+      speak(`${placerName} सच बोले!`);
+      setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहे थे! ${loserName} पत्ते उठाएंगे।`);
     }
 
     clearSelection();
@@ -819,7 +819,7 @@ function handleRemoteUpdate(gameData, lastMove) {
 
     state = newState;
 
-    speak(`${challengerName} called bluff!`);
+    speak(`${challengerName} ने ब्लफ बुलाया!`);
 
     renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName).then(async () => {
       // Animate pile sweep to loser
@@ -827,11 +827,11 @@ function handleRemoteUpdate(gameData, lastMove) {
       await animatePileSweep(loserIndex);
 
       if (bluffCaught) {
-        speak(`${placerName} caught bluffing!`);
-        setEventMessage(`🚨 ${challengerName} challenged! ${placerName} was bluffing! ${placerName} takes the pile.`);
+        speak(`${placerName} ने झूठ बोला!`);
+        setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहे थे! ${placerName} पत्ते उठाएंगे।`);
       } else {
-        speak(`${placerName} was truthful!`);
-        setEventMessage(`✅ ${challengerName} challenged! ${placerName} was truthful! ${loserName} takes the pile.`);
+        speak(`${placerName} सच बोले!`);
+        setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहे थे! ${loserName} पत्ते उठाएंगे।`);
       }
       clearSelection();
 
