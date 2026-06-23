@@ -572,6 +572,9 @@ async function handlePlacement(cardIndices) {
       // Capture card rects before state change for animation
       const cardRects = cardIndices.map((idx) => getHandCardRect(idx));
 
+      // Save the player's current hand order before engine modifies it
+      const oldHand = [...state.players[playerIndex].hand];
+
       const newState = placeCards(state, cardIndices, state.currentRank);
 
       const validation = validateState(newState);
@@ -580,7 +583,14 @@ async function handlePlacement(cardIndices) {
         return;
       }
 
-      state = newState;
+      // Restore hand order: remove placed cards from old hand order
+      const placedCards = cardIndices.map((idx) => oldHand[idx]);
+      const restoredHand = oldHand.filter((card) => !placedCards.some((pc) => pc.rank === card.rank && pc.suit === card.suit));
+      const restoredPlayers = newState.players.map((p, i) => {
+        if (i === playerIndex) return { ...p, hand: restoredHand };
+        return p;
+      });
+      state = { ...newState, players: restoredPlayers };
       clearSelection();
 
       playSound('throw');
@@ -616,6 +626,9 @@ async function handlePlacement(cardIndices) {
   // No rank set — first player of the round picks via rank selector
   renderRankSelector(async (declaredRank) => {
     try {
+      // Save the player's current hand order before engine modifies it
+      const oldHand = [...state.players[playerIndex].hand];
+
       const newState = placeCards(state, cardIndices, declaredRank);
 
       const validation = validateState(newState);
@@ -624,7 +637,14 @@ async function handlePlacement(cardIndices) {
         return;
       }
 
-      state = newState;
+      // Restore hand order: remove placed cards from old hand order
+      const placedCards = cardIndices.map((idx) => oldHand[idx]);
+      const restoredHand = oldHand.filter((card) => !placedCards.some((pc) => pc.rank === card.rank && pc.suit === card.suit));
+      const restoredPlayers = newState.players.map((p, i) => {
+        if (i === playerIndex) return { ...p, hand: restoredHand };
+        return p;
+      });
+      state = { ...newState, players: restoredPlayers };
       clearSelection();
 
       playSound('throw');
@@ -700,6 +720,9 @@ async function handleChallenge() {
   warmSpeech();
 
   try {
+    // Save the player's current hand order before engine modifies it (in case we're the loser)
+    const oldHand = [...state.players[playerIndex].hand];
+
     const { newState, bluffCaught, revealedCards } = resolveChallenge(state, playerIndex);
 
     const validation = validateState(newState);
@@ -718,7 +741,16 @@ async function handleChallenge() {
     const loserIndex = bluffCaught ? placerIndex : playerIndex;
     const loserName = state.players[loserIndex].name;
 
-    state = newState;
+    // Preserve hand order for the loser by appending pile cards to their old hand
+    const pileCards = [...state.centerPile];
+    const restoredPlayers = newState.players.map((p, i) => {
+      if (i === loserIndex && i === playerIndex) {
+        // We are the loser: preserve our sorted order + append pile cards at end
+        return { ...p, hand: [...oldHand, ...pileCards] };
+      }
+      return p;
+    });
+    state = { ...newState, players: restoredPlayers };
 
     const lastMove = {
       playerIndex,
@@ -817,7 +849,19 @@ function handleRemoteUpdate(gameData, lastMove) {
     const challengerIdx = lastMove.playerIndex;
     const challengerName = lastMove.challengerName || (state && state.players[challengerIdx]?.name) || 'Player';
 
-    state = newState;
+    // Save our current hand order before engine modifies it (in case we're the loser)
+    const oldHand = state.players[playerIndex] ? [...state.players[playerIndex].hand] : [];
+    const oldPileCards = state.centerPile ? [...state.centerPile] : [];
+
+    // Preserve hand order for the loser by appending pile cards to their old hand
+    const restoredPlayers = newState.players.map((p, i) => {
+      if (i === loserIndex && i === playerIndex && oldHand.length > 0) {
+        // We are the loser: preserve our sorted order + append pile cards at end
+        return { ...p, hand: [...oldHand, ...oldPileCards] };
+      }
+      return p;
+    });
+    state = { ...newState, players: restoredPlayers };
 
     speak(`${challengerName} ने ब्लफ दबाया!`);
 
