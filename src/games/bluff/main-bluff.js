@@ -731,9 +731,6 @@ async function handleChallenge() {
       return;
     }
 
-    // Announce
-    speak('Bluff called!');
-
     const challengerName = state.players[playerIndex].name;
     const placerIndex = state.lastPlacement.playerIndex;
     const placerName = state.players[placerIndex].name;
@@ -770,12 +767,10 @@ async function handleChallenge() {
     playSound('capture');
     await animatePileSweep(loserIndex);
 
-    // Announce outcome with challenger name in Devanagari
+    // Show challenge message in Devanagari
     if (bluffCaught) {
-      speak(`${placerName} ने झूठ बोला था!`);
       setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
     } else {
-      speak(`${placerName} ने सच बोला था!`);
       setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
     }
 
@@ -863,18 +858,14 @@ function handleRemoteUpdate(gameData, lastMove) {
     });
     state = { ...newState, players: restoredPlayers };
 
-    speak(`${challengerName} ने ब्लफ दबाया!`);
-
     renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName).then(async () => {
       // Animate pile sweep to loser
       playSound('capture');
       await animatePileSweep(loserIndex);
 
       if (bluffCaught) {
-        speak(`${placerName} ने झूठ बोला था!`);
         setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
       } else {
-        speak(`${placerName} ने सच बोला था!`);
         setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
       }
       clearSelection();
