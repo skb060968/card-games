@@ -740,11 +740,11 @@ async function handleChallenge() {
 
     // Announce outcome with challenger name in Devanagari
     if (bluffCaught) {
-      speak(`${placerName} ने झूठ बोला!`);
-      setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहे थे! ${placerName} पत्ते उठाएंगे।`);
+      speak(`${placerName} ने झूठ बोला था!`);
+      setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
     } else {
-      speak(`${placerName} सच बोले!`);
-      setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहे थे! ${loserName} पत्ते उठाएंगे।`);
+      speak(`${placerName} ने सच बोला था!`);
+      setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
     }
 
     clearSelection();
@@ -819,7 +819,7 @@ function handleRemoteUpdate(gameData, lastMove) {
 
     state = newState;
 
-    speak(`${challengerName} ने ब्लफ बुलाया!`);
+    speak(`${challengerName} ने ब्लफ दबाया!`);
 
     renderChallengeResult(revealedCards, declaredRank, bluffCaught, loserName).then(async () => {
       // Animate pile sweep to loser
@@ -827,11 +827,11 @@ function handleRemoteUpdate(gameData, lastMove) {
       await animatePileSweep(loserIndex);
 
       if (bluffCaught) {
-        speak(`${placerName} ने झूठ बोला!`);
-        setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहे थे! ${placerName} पत्ते उठाएंगे।`);
+        speak(`${placerName} ने झूठ बोला था!`);
+        setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
       } else {
-        speak(`${placerName} सच बोले!`);
-        setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहे थे! ${loserName} पत्ते उठाएंगे।`);
+        speak(`${placerName} ने सच बोला था!`);
+        setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
       }
       clearSelection();
 
