@@ -5,7 +5,7 @@
    - Update detection + prompt support
    ============================== */
 
-const CACHE_NAME = "card-games-v82";
+const CACHE_NAME = "card-games-v83"; // Upgraded update notification system
 
 // Pre-cache truly static assets (not Vite-hashed JS/CSS)
 const STATIC_ASSETS = [
@@ -29,16 +29,24 @@ const STATIC_ASSETS = [
    Install
    ============================== */
 self.addEventListener("install", (event) => {
+  console.log(`[SW] Installing version ${CACHE_NAME}`);
+  // Skip waiting to activate new service worker immediately
+  self.skipWaiting();
+  
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Caching app shell');
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
-  // Do NOT call skipWaiting — let the page control when to activate
 });
 
 /* ==============================
    Activate
    ============================== */
 self.addEventListener("activate", (event) => {
+  console.log(`[SW] Activating version ${CACHE_NAME}`);
+  
   event.waitUntil(
     caches
       .keys()
@@ -46,12 +54,24 @@ self.addEventListener("activate", (event) => {
         Promise.all(
           keys.map((key) => {
             if (key !== CACHE_NAME) {
+              console.log(`[SW] Deleting old cache: ${key}`);
               return caches.delete(key);
             }
           }),
         ),
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
+      .then(() => {
+        // Notify all clients about the update
+        return self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'UPDATE_AVAILABLE',
+              version: CACHE_NAME
+            });
+          });
+        });
+      })
   );
 });
 

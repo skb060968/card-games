@@ -1023,53 +1023,70 @@ async function checkSession() {
 
 /* ======= SERVICE WORKER ======= */
 
+// Update notification functions
+window.reloadForUpdate = function() {
+  window.location.reload();
+};
+
+window.dismissUpdate = function() {
+  document.getElementById('updateToast').style.display = 'none';
+};
+
+function showUpdateToast() {
+  const toast = document.getElementById('updateToast');
+  if (!toast) return;
+  toast.style.display = 'block';
+  toast.style.animation = 'slideUp 0.4s ease-out';
+}
+
+// Register Service Worker for PWA with update detection
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered');
-
-      if (registration.waiting) {
-        showUpdateToast(registration);
-      }
-
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (!newWorker) return;
-
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateToast(registration);
-          }
-        });
-      });
-    } catch (err) {
-      console.warn('Service Worker registration failed:', err.message);
-    }
+  let refreshing = false;
+  
+  // Detect controller change and reload
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    console.log('[App] Controller changed, reloading...');
   });
-}
 
-function showUpdateToast(registration) {
-  const updateToast = document.getElementById('update-toast');
-  const updateBtn = document.getElementById('update-refresh-btn');
-  if (!updateToast) return;
-
-  updateToast.hidden = false;
-
-  if (updateBtn && !updateBtn._listenerAdded) {
-    updateBtn._listenerAdded = true;
-    updateBtn.addEventListener('click', () => {
-      updateToast.hidden = true;
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('✅ Service Worker registered:', registration);
+        
+        // Check for updates periodically (every 5 minutes)
+        setInterval(() => {
+          registration.update();
+        }, 5 * 60 * 1000);
+        
+        // Listen for waiting service worker
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('[App] New service worker found');
+          
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[App] New service worker installed, update available');
+              showUpdateToast();
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.log('❌ Service Worker registration failed:', error);
       });
+    
+    // Listen for messages from service worker
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+        console.log(`[App] Update available: ${event.data.version}`);
+        showUpdateToast();
+      }
     });
-  }
+  });
 }
 
 /* ======= INITIALIZATION ======= */
