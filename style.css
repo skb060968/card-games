@@ -1910,6 +1910,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  perspective: 1000px; /* Add 3D perspective for flip effect */
 }
 
 /* Blank corner cells */
@@ -1976,6 +1977,21 @@ body {
   opacity: 0.15;
   border: 1px dashed rgba(255,255,255,0.15);
   border-radius: var(--card-radius);
+}
+
+/* --- Card flip animation (on click) --- */
+@keyframes fm-card-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(90deg);
+  }
+}
+
+.fm-grid-card.fm-flipping {
+  animation: fm-card-flip 0.15s ease-in forwards;
+  transform-style: preserve-3d;
 }
 
 /* --- Match animation: rise + gold glow --- */

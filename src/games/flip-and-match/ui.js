@@ -208,7 +208,12 @@ function renderGrid(container, board, isMyTurn, onFlip) {
         cardEl.style.cursor = 'pointer';
         const idx = cardIdx;
         cardEl.addEventListener('click', () => {
-          if (onFlip) onFlip(idx);
+          if (onFlip) {
+            // Add flip animation class
+            cardEl.classList.add('fm-flipping');
+            // Call flip handler after a tiny delay
+            setTimeout(() => onFlip(idx), 50);
+          }
         });
       } else {
         cardEl.style.cursor = 'default';
