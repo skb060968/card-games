@@ -65,6 +65,7 @@ let goHome = null;
 let isProcessingFlip = false;
 let _resultsShown = false;
 let _hasInitializedGame = false; // Track if we've loaded game from status change
+let _lastMove = null; // Track last move for flip animation sync
 
 /* ======= SESSION ======= */
 
@@ -313,7 +314,7 @@ function startGame() {
 
 function renderUI() {
   if (!state) return;
-  renderGameplay(state, playerIndex, handleFlip);
+  renderGameplay(state, playerIndex, handleFlip, _lastMove);
 }
 
 /* ======= FLIP HANDLING ======= */
@@ -361,6 +362,9 @@ async function handleFlip(cardIndex) {
       timestamp: Date.now(),
     };
 
+    // Store for animation sync
+    _lastMove = lastMove;
+
     // Write to Firebase
     try {
       await writeFullState(stateToWrite, lastMove);
@@ -386,7 +390,7 @@ async function handleFlip(cardIndex) {
         return { ...s };
       });
       const tempState = { ...state, board: tempBoard };
-      renderGameplay(tempState, playerIndex, handleFlip);
+      renderGameplay(tempState, playerIndex, handleFlip, _lastMove);
 
       // Sound: capture
       playSound('capture');
@@ -467,6 +471,9 @@ async function handleRemoteUpdate(gameData, lastMove) {
   if (lastMove && lastMove.playerIndex !== playerIndex) {
     isProcessingFlip = true;
 
+    // Store for animation sync
+    _lastMove = lastMove;
+
     playSound('throw');
 
     if (lastMove.matched) {
@@ -482,7 +489,7 @@ async function handleRemoteUpdate(gameData, lastMove) {
           return { ...s };
         });
         const tempState = { ...state, board: tempBoard, players: newState.players };
-        renderGameplay(tempState, playerIndex, handleFlip);
+        renderGameplay(tempState, playerIndex, handleFlip, _lastMove);
       }
 
       playSound('capture');

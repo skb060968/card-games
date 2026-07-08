@@ -26,8 +26,9 @@ const BLANK_CORNERS = new Set([0, 6, 49, 55]); // [0,0], [0,6], [7,0], [7,6]
  * @param {object} state - GameState
  * @param {number} localPlayerIndex
  * @param {Function} onFlip - callback(cardIndex) when a face-down card is tapped
+ * @param {object} lastMove - optional, for showing flip animation on remote devices
  */
-export function renderGameplay(state, localPlayerIndex, onFlip) {
+export function renderGameplay(state, localPlayerIndex, onFlip, lastMove = null) {
   const opponentsArea = document.getElementById('fm-opponents-area');
   const gridArea = document.getElementById('fm-grid-area');
   const selfArea = document.getElementById('fm-self-area');
@@ -38,7 +39,7 @@ export function renderGameplay(state, localPlayerIndex, onFlip) {
 
   if (gridArea) {
     const isMyTurn = state.currentPlayerIndex === localPlayerIndex;
-    renderGrid(gridArea, state.board, isMyTurn, onFlip);
+    renderGrid(gridArea, state.board, isMyTurn, onFlip, lastMove);
   }
 
   if (selfArea) {
@@ -170,13 +171,18 @@ function buildWonCardsDeck(count) {
  * Renders the card grid — 7 columns × 8 rows = 56 cells.
  * 4 corner cells are blank, 52 cells hold cards.
  */
-function renderGrid(container, board, isMyTurn, onFlip) {
+function renderGrid(container, board, isMyTurn, onFlip, lastMove = null) {
   container.innerHTML = '';
 
   const grid = document.createElement('div');
   grid.className = 'fm-grid';
 
   let cardIdx = 0; // index into the 52-card board array
+
+  // Check if there's a recent flip to animate (within 500ms)
+  const recentFlipIndex = (lastMove && lastMove.timestamp && (Date.now() - lastMove.timestamp < 500))
+    ? lastMove.cardIndex
+    : null;
 
   for (let cellIdx = 0; cellIdx < TOTAL_CELLS; cellIdx++) {
     const cell = document.createElement('div');
@@ -224,6 +230,12 @@ function renderGrid(container, board, isMyTurn, onFlip) {
       const cardEl = renderCardFace(slot.card);
       cardEl.classList.add('fm-grid-card');
       cardEl.style.cursor = 'default';
+      
+      // If this card was just flipped, add animation class
+      if (recentFlipIndex === cardIdx) {
+        cardEl.classList.add('fm-flipping');
+      }
+      
       cell.appendChild(cardEl);
     } else {
       // collected — empty slot
