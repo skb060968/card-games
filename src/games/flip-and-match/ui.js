@@ -184,6 +184,8 @@ function renderGrid(container, board, isMyTurn, onFlip, lastMove = null) {
     ? lastMove.cardIndex
     : null;
 
+  console.log('renderGrid: lastMove=', lastMove, 'recentFlipIndex=', recentFlipIndex, 'timeDiff=', lastMove ? Date.now() - lastMove.timestamp : 'N/A');
+
   for (let cellIdx = 0; cellIdx < TOTAL_CELLS; cellIdx++) {
     const cell = document.createElement('div');
     cell.className = 'fm-cell';

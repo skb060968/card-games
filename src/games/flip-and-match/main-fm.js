@@ -532,6 +532,9 @@ async function handleRemoteUpdate(gameData, lastMove) {
       return;
     }
 
+    // Small delay to show flip animation
+    await new Promise((r) => setTimeout(r, 200));
+    
     renderUI();
     isProcessingFlip = false;
     return;
