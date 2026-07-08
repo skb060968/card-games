@@ -179,13 +179,6 @@ function renderGrid(container, board, isMyTurn, onFlip, lastMove = null) {
 
   let cardIdx = 0; // index into the 52-card board array
 
-  // Check if there's a recent flip to animate (within 500ms)
-  const recentFlipIndex = (lastMove && lastMove.timestamp && (Date.now() - lastMove.timestamp < 500))
-    ? lastMove.cardIndex
-    : null;
-
-  console.log('renderGrid: lastMove=', lastMove, 'recentFlipIndex=', recentFlipIndex, 'timeDiff=', lastMove ? Date.now() - lastMove.timestamp : 'N/A');
-
   for (let cellIdx = 0; cellIdx < TOTAL_CELLS; cellIdx++) {
     const cell = document.createElement('div');
     cell.className = 'fm-cell';
@@ -232,12 +225,6 @@ function renderGrid(container, board, isMyTurn, onFlip, lastMove = null) {
       const cardEl = renderCardFace(slot.card);
       cardEl.classList.add('fm-grid-card');
       cardEl.style.cursor = 'default';
-      
-      // If this card was just flipped, add animation class
-      if (recentFlipIndex === cardIdx) {
-        cardEl.classList.add('fm-flipping');
-      }
-      
       cell.appendChild(cardEl);
     } else {
       // collected — empty slot

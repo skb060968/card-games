@@ -474,6 +474,43 @@ async function handleRemoteUpdate(gameData, lastMove) {
     // Store for animation sync
     _lastMove = lastMove;
 
+    // Detect which card was flipped: compare old state to new state
+    const flippedCardIndex = lastMove.cardIndex;
+    const oldCardState = state.board[flippedCardIndex]?.state;
+    const newCardState = newState.board[flippedCardIndex]?.state;
+
+    // If card went from 'down' to 'up', show flip animation
+    if (oldCardState === 'down' && newCardState === 'up' && !lastMove.matched) {
+      // Show flip animation for non-matched card
+      playSound('throw');
+      
+      // Temporarily render with the card still face-down, trigger flip
+      const cell = document.querySelector(`[data-card-index="${flippedCardIndex}"]`);
+      if (cell) {
+        const cardEl = cell.querySelector('.fm-grid-card');
+        if (cardEl) {
+          cardEl.classList.add('fm-flipping');
+        }
+      }
+      
+      // Wait for flip animation to complete (150ms)
+      await new Promise((r) => setTimeout(r, 150));
+      
+      // Now update to show face-up
+      state = newState;
+      setEventMessage('No match — card stays face-up');
+      
+      if (state.status === 'finished') {
+        isProcessingFlip = false;
+        handleWin();
+        return;
+      }
+
+      renderUI();
+      isProcessingFlip = false;
+      return;
+    }
+
     playSound('throw');
 
     if (lastMove.matched) {
@@ -483,6 +520,17 @@ async function handleRemoteUpdate(gameData, lastMove) {
       // Build a temp state where both matched cards are still face-up
       const prevBoard = state ? [...state.board] : [];
       if (prevBoard.length > 0 && lastMove.cardIndex < prevBoard.length) {
+        // First show flip animation for the newly flipped card
+        const cell = document.querySelector(`[data-card-index="${flippedCardIndex}"]`);
+        if (cell && prevBoard[flippedCardIndex]?.state === 'down') {
+          const cardEl = cell.querySelector('.fm-grid-card');
+          if (cardEl) {
+            cardEl.classList.add('fm-flipping');
+          }
+          // Wait for flip animation
+          await new Promise((r) => setTimeout(r, 150));
+        }
+
         // Show the flipped card as face-up
         const tempBoard = prevBoard.map((s, i) => {
           if (i === lastMove.cardIndex) return { ...s, state: 'up' };
