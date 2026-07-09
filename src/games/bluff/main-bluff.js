@@ -110,8 +110,8 @@ const SPOKEN_RANK = {
   '6': 'छक्की',      // chhakki
   '7': 'सत्ती',      // satti
   '8': 'अट्ठी',      // atthi
-  '9': 'नहले',       // nahale
-  '10': 'दहले',      // dahale
+  '9': 'नहली',       // nahli
+  '10': 'दहली',      // dahli
   'J': 'गुलाम',      // gulaam
   'Q': 'रानी',       // rani
   'K': 'राजा',       // raja
@@ -807,11 +807,11 @@ async function handleChallenge() {
     playSound('capture');
     await animatePileSweep(loserIndex);
 
-    // Show challenge message in Devanagari
+    // Show challenge message
     if (bluffCaught) {
-      setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
+      setEventMessage(`🚨 ${challengerName} challenged! ${placerName} was lying! ${placerName} will pick up cards.`);
     } else {
-      setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
+      setEventMessage(`✅ ${challengerName} challenged! ${placerName} was telling truth! ${loserName} will pick up cards.`);
     }
 
     // Apply sort if enabled (maintains sort order after picking up pile)
@@ -907,9 +907,9 @@ function handleRemoteUpdate(gameData, lastMove) {
       await animatePileSweep(loserIndex);
 
       if (bluffCaught) {
-        setEventMessage(`🚨 ${challengerName} ने चैलेंज किया! ${placerName} झूठ बोल रहा था! ${placerName} पत्ते उठाएंगे।`);
+        setEventMessage(`🚨 ${challengerName} challenged! ${placerName} was lying! ${placerName} will pick up cards.`);
       } else {
-        setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
+        setEventMessage(`✅ ${challengerName} challenged! ${placerName} was telling truth! ${loserName} will pick up cards.`);
       }
       
       // Apply sort if enabled (maintains sort order after picking up pile)
