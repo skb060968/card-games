@@ -72,6 +72,7 @@ let goHome = null;
 let _isAnimating = false;
 let _resultsShown = false;
 let _hasInitializedGame = false; // Track if we've loaded game from status change
+let _sortEnabled = false; // Track if player has enabled sort by rank
 
 /* ======= SESSION ======= */
 function saveSession() {
@@ -93,6 +94,7 @@ function cleanupAndGoHome() {
   clearSession();
   roomCode = null; playerIndex = null; isHost = false; playerNames = []; state = null;
   _hasInitializedGame = false; // Reset initialization flag
+  _sortEnabled = false; // Reset sort preference
   if (goHome) goHome();
 }
 
@@ -483,6 +485,7 @@ function wireLobby() {
 
 function startGame() {
   _resultsShown = false;
+  _sortEnabled = false; // Reset sort preference for new game
   showScreen('bl-gameplay');
   const endBtn = document.getElementById('bl-btn-end-game');
   if (endBtn) endBtn.hidden = !isHost;
@@ -532,8 +535,33 @@ function handleReorder(fromIndex, toIndex) {
 const RANK_ORDER = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
 const SUIT_ORDER = { '♠': 0, '♥': 1, '♦': 2, '♣': 3 };
 
+/**
+ * Apply sort to current player's hand if sort is enabled.
+ * This is called after every state update to maintain sort order.
+ */
+function applySortIfEnabled() {
+  if (!_sortEnabled || !state || playerIndex == null) return;
+  
+  const hand = [...state.players[playerIndex].hand];
+  hand.sort((a, b) => {
+    const rankDiff = (RANK_ORDER[a.rank] || 0) - (RANK_ORDER[b.rank] || 0);
+    if (rankDiff !== 0) return rankDiff;
+    return (SUIT_ORDER[a.suit] || 0) - (SUIT_ORDER[b.suit] || 0);
+  });
+  
+  const newPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) return { ...p, hand };
+    return { ...p };
+  });
+  state = { ...state, players: newPlayers };
+}
+
 function handleSort() {
   if (!state || playerIndex == null) return;
+  
+  // Enable sort mode - will be maintained until game ends
+  _sortEnabled = true;
+  
   const hand = [...state.players[playerIndex].hand];
   hand.sort((a, b) => {
     const rankDiff = (RANK_ORDER[a.rank] || 0) - (RANK_ORDER[b.rank] || 0);
@@ -591,6 +619,10 @@ async function handlePlacement(cardIndices) {
         return p;
       });
       state = { ...newState, players: restoredPlayers };
+      
+      // Apply sort if enabled (maintains sort order after throwing cards)
+      applySortIfEnabled();
+      
       clearSelection();
 
       playSound('throw');
@@ -645,6 +677,10 @@ async function handlePlacement(cardIndices) {
         return p;
       });
       state = { ...newState, players: restoredPlayers };
+      
+      // Apply sort if enabled (maintains sort order after throwing cards)
+      applySortIfEnabled();
+      
       clearSelection();
 
       playSound('throw');
@@ -687,6 +723,10 @@ async function handlePass() {
   try {
     const newState = passCard(state);
     state = newState;
+    
+    // Apply sort if enabled (maintains sort order)
+    applySortIfEnabled();
+    
     clearSelection();
 
     playSound('capture');
@@ -773,6 +813,9 @@ async function handleChallenge() {
     } else {
       setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
     }
+
+    // Apply sort if enabled (maintains sort order after picking up pile)
+    applySortIfEnabled();
 
     clearSelection();
 
@@ -868,6 +911,10 @@ function handleRemoteUpdate(gameData, lastMove) {
       } else {
         setEventMessage(`✅ ${challengerName} ने चैलेंज किया! ${placerName} सच बोल रहा था! ${loserName} पत्ते उठाएंगे।`);
       }
+      
+      // Apply sort if enabled (maintains sort order after picking up pile)
+      applySortIfEnabled();
+      
       clearSelection();
 
       // If the truthful placer had emptied their hand, game is over
@@ -884,6 +931,10 @@ function handleRemoteUpdate(gameData, lastMove) {
   // Detect placement from remote (another player placed cards)
   if (lastMove && lastMove.action === 'place' && lastMove.playerIndex !== playerIndex) {
     state = newState;
+    
+    // Apply sort if enabled (maintains sort order)
+    applySortIfEnabled();
+    
     clearSelection();
     playSound('throw');
 
@@ -906,6 +957,10 @@ function handleRemoteUpdate(gameData, lastMove) {
   // Detect pass from remote (another player passed)
   if (lastMove && lastMove.action === 'pass' && lastMove.playerIndex !== playerIndex) {
     state = newState;
+    
+    // Apply sort if enabled (maintains sort order)
+    applySortIfEnabled();
+    
     clearSelection();
     playSound('capture');
     const passerName = state.players[lastMove.playerIndex]?.name || 'Player';
@@ -929,6 +984,9 @@ function handleRemoteUpdate(gameData, lastMove) {
     handleWin();
     return;
   }
+
+  // Apply sort if enabled (maintains sort order for all state updates)
+  applySortIfEnabled();
 
   clearSelection();
   renderUI();
