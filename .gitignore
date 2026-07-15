@@ -3,3 +3,6 @@ dist
 .env
 .env.local
 .kiro
+
+# Firebase rules shared across all projects
+firebase-rules.json
