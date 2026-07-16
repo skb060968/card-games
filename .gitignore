@@ -6,3 +6,7 @@ dist
 
 # Firebase rules shared across all projects
 firebase-rules.json
+
+# Exclude documentation files (keep README.md)
+*.md
+!README.md
